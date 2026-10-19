@@ -1,0 +1,59 @@
+{
+  "app_name": "Jasa Kamera Makassar",
+  "app_type": "hybrid_fullstack marketplace dashboard",
+  "target_audience": "Wedding couples, corporate event organizers, brand owners, and graduation graduates in Makassar seeking professional freelance photographers.",
+  "emotional_tone": "Editorial, trustworthy, artistic, high-end marketplace (Fiverr meets MyWed & Shuttercat)",
+  "typography": {
+    "headings": "Playfair Display, serif",
+    "body": "Plus Jakarta Sans, sans-serif",
+    "mono": "JetBrains Mono, monospace"
+  },
+  "colors": {
+    "archetype": "ORGANIC & EARTHY / LUXURY",
+    "primary": "#B45309",
+    "primary_hover": "#92400E",
+    "background": "#FAFAF9",
+    "surface": "#FFFFFF",
+    "card": "#FFFFFF",
+    "text_primary": "#1C1917",
+    "text_secondary": "#78716C",
+    "border": "#E7E5E4",
+    "accent": "#0D9488"
+  },
+  "visual_enhancers": [
+    "Glassmorphism sticky header with backdrop-blur-xl bg-white/80 dark:bg-zinc-950/80",
+    "Subtle grain overlay and 1px refined border highlights",
+    "Swipeable MyWed-style large photo gallery grids with lightbox modals",
+    "Badge ribbons for 12 DEMO profiles"
+  ],
+  "categories": [
+    "Wedding",
+    "Commercial",
+    "Event",
+    "Graduation"
+  ],
+  "key_features": [
+    "Homepage marketplace with hero banner, category quick-filters, featured DEMO profiles, and trending packages",
+    "Photographer search with advanced filters (category, price range in IDR, rating, Makassar district/location, style)",
+    "List and Grid toggle for search results",
+    "MyWed-style public photographer profile with swipeable portfolio gallery, bio, packages, and instant booking modal",
+    "Fiverr-style standardized service packages with transparent deliverables and timeline",
+    "Google OAuth with role-aware protected routes (Customer, Photographer, Admin)",
+    "Photographer registration with category selection and encrypted + masked bank account (e.g., BCA •••• 4892)",
+    "Internal chat system with live simulated replies from demo photographers",
+    "Favorites / Wishlist toggle with persistent storage",
+    "Availability calendar with date picker for booking requests",
+    "Booking request flow with escrow/deferred payment foundation (payment skipped for demo)",
+    "Wallet and demo withdrawal ledger with QRIS/BCA payout simulations",
+    "Dashboards for Customer, Photographer, and Admin",
+    "Photographer verification status badge & admin audit logs",
+    "Commission ledger (e.g., 10% platform fee) & refund records"
+  ],
+  "demo_photographers_count": 12,
+  "image_urls": {
+    "hero_background": "https://images.pexels.com/photos/2355062/pexels-photo-2355062.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "photographer_sample": "https://images.unsplash.com/photo-1537633468298-d86f0c2d4173?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwzfHx3ZWRkaW5nJTIwcGhvdG9ncmFwaGVyJTIwcG9ydGZvbGlvJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzkyNDEyNjQzfDA&ixlib=rb-4.1.0&q=85",
+    "gallery_sample": "https://images.unsplash.com/photo-1519741196428-6a2175fa2557?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwyfHx3ZWRkaW5nJTIwcGhvdG9ncmFwaGVyJTIwcG9ydGZvbGlvJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzkyNDEyNjQzfDA&ixlib=rb-4.1.0&q=85"
+  },
+  "instructions_to_main_agent": "Build a stunning, fully interactive fullstack React application named 'Jasa Kamera' for freelance photography in Makassar. Use React, Tailwind CSS, Lucide icons, and Shadcn UI primitives. Ensure all data (12 DEMO photographers across Wedding, Commercial, Event, Graduation) is fully loaded with rich portfolios, encrypted bank accounts, chat messages, booking calendar, and multi-role dashboards. Add data-testid attributes to all interactive elements."
+}
