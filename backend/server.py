@@ -70,6 +70,9 @@ class BookingCreate(BaseModel):
     location: str
     notes: str = ""
 
+class FavoriteCreate(BaseModel):
+    photographer_id: str
+
 @api.get("/")
 async def root(): return {"message": "Jasa Kamera API aktif", "categories": CATEGORIES}
 
@@ -151,6 +154,21 @@ async def send_message(payload: MessageCreate, request: Request):
     msg = {"message_id": f"msg_{uuid.uuid4().hex[:10]}", "sender_id": user["user_id"], "photographer_id": payload.photographer_id, "text": payload.text, "created_at": datetime.now(timezone.utc).isoformat(), "status": "sent"}
     await db.messages.insert_one(msg)
     return public(msg)
+
+@api.post("/favorites")
+async def add_favorite(payload: FavoriteCreate, request: Request):
+    user = await current_user(request)
+    p = await db.photographers.find_one({"photographer_id": payload.photographer_id}, {"_id": 0, "photographer_id": 1, "name": 1, "slug": 1})
+    if not p: raise HTTPException(404, "Fotografer tidak ditemukan")
+    favorite = {"favorite_id": f"fav_{uuid.uuid4().hex[:10]}", "user_id": user["user_id"], **p, "created_at": datetime.now(timezone.utc).isoformat()}
+    await db.favorites.update_one({"user_id": user["user_id"], "photographer_id": payload.photographer_id}, {"$set": favorite}, upsert=True)
+    return public(favorite)
+
+@api.delete("/favorites/{photographer_id}")
+async def remove_favorite(photographer_id: str, request: Request):
+    user = await current_user(request)
+    await db.favorites.delete_one({"user_id": user["user_id"], "photographer_id": photographer_id})
+    return {"ok": True}
 
 @api.get("/chat/messages/{photographer_id}")
 async def messages(photographer_id: str, request: Request):
