@@ -117,8 +117,12 @@ async def register_photographer(payload: PhotographerRegistration):
 async def auth_session(payload: OAuthSession, response: Response):
     try:
         result = requests.get("https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data", headers={"X-Session-ID": payload.session_id}, timeout=10)
+        if result.status_code >= 400:
+            raise HTTPException(401, "Sesi Google tidak valid atau sudah kedaluwarsa")
         data = result.json()
     except Exception as exc: raise HTTPException(401, f"Sesi Google tidak dapat diverifikasi: {exc}")
+    if not isinstance(data, dict) or not data.get("email") or not data.get("session_token"):
+        raise HTTPException(401, "Respons autentikasi Google tidak lengkap")
     user = await db.users.find_one({"email": data["email"]}, {"_id": 0})
     if not user:
         user = {"user_id": f"user_{uuid.uuid4().hex[:12]}", "email": data["email"], "name": data.get("name", "Pengguna Jasa Kamera"), "picture": data.get("picture", ""), "role": "customer", "created_at": datetime.now(timezone.utc).isoformat()}
