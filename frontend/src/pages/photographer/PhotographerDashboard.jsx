@@ -8,7 +8,7 @@ import { Inbox } from "@/components/chat/Inbox";
 import { CalendarTab, ServicesTab, PortfolioTab, ProfileTab, WalletTab } from "./StudioTabs";
 
 function Orders({ onChange }) {
-  const [status, setStatus] = useState("pending");
+  const [status, setStatus] = useState("");
   const [items, setItems] = useState(null);
   const load = useCallback(() => api.get(`/bookings?status=${status}`).then(setItems).catch(() => setItems([])), [status]);
   useEffect(() => { load(); }, [load]);
@@ -53,7 +53,7 @@ export default function PhotographerDashboard() {
       {tab === "kalender" && <CalendarTab profile={p} />}
       {tab === "layanan" && <ServicesTab profile={p} reload={reload} />}
       {tab === "portofolio" && <PortfolioTab profile={p} reload={reload} />}
-      {tab === "chat" && <Inbox role="photographer" />}
+      {tab === "chat" && <Inbox role="photographer" onRead={reload} />}
       {tab === "wallet" && <WalletTab wallet={data.wallet} reload={reload} />}
       {tab === "profil" && <ProfileTab profile={p} reload={reload} />}
     </DashShell>

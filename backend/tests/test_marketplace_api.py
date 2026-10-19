@@ -33,7 +33,8 @@ def test_profile_and_search():
 
 
 def test_registration_masks_account_and_rejects_invalid_category():
-    payload = {"name": "TEST Fotografer", "email": "TEST photographer@example.com", "category": "Event", "bank_account": "123456789012"}
+    import uuid
+    payload = {"name": "TEST Fotografer", "email": f"test_reg_legacy_{uuid.uuid4().hex[:6]}@example.com", "category": "Event", "bank_account": "123456789012"}
     response = requests.post(f"{BASE_URL}/api/photographers/register", json=payload, timeout=20)
     assert response.status_code == 200
     body = response.json()
@@ -47,4 +48,4 @@ def test_protected_endpoints_require_session():
     session = requests.Session()
     assert session.get(f"{BASE_URL}/api/auth/me", timeout=20).status_code == 401
     assert session.get(f"{BASE_URL}/api/dashboard/summary", timeout=20).status_code == 401
-    assert session.get(f"{BASE_URL}/api/chat/messages/ph_01", timeout=20).status_code == 401
+    assert session.get(f"{BASE_URL}/api/chat/conversations", timeout=20).status_code == 401

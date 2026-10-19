@@ -34,7 +34,25 @@ Membangun ulang website Jasa Kamera sebagai marketplace jasa fotografi freelance
 - Menambahkan endpoint chat, favorites, bookings, dashboard summary, serta error states untuk pengguna belum masuk.
 - Menyimpan auth testing playbook dan menjalankan regression backend/frontend sampai lulus.
 
-## Prioritized backlog
+
+### 2026-10-19 — Fase 2 (Booking, Kalender, Chat, Studio, Admin)
+- Backend dipecah modular: core.py, auth.py, seed.py, routers/{catalog,availability,bookings,chat,customer,photographer,admin}.py.
+- Role-based access (customer/photographer/admin) via require_role; admin lewat env ADMIN_EMAILS; fotografer terhubung lewat email pendaftaran.
+- Booking lifecycle: pending → accepted/declined → completed/cancelled, riwayat status, cek bentrok server-side (booking diterima + blokir jadwal), validasi jam/tanggal/tengah malam, rekomendasi fotografer alternatif saat bentrok.
+- Kalender ketersediaan publik + blokir jadwal oleh fotografer.
+- Chat persisten: conversations + messages, unread counter, inbox customer & fotografer (polling).
+- Studio Fotografer (/studio): ringkasan, pesanan, kalender, layanan CRUD, portofolio (URL), chat, wallet DEMO + permintaan pencairan (snapshot rekening terenkripsi), profil.
+- Panel Admin (/admin): ringkasan, verifikasi fotografer (pendaftar baru tersembunyi sampai disetujui), pesanan, pencairan, pengguna, audit log.
+- Frontend dipecah menjadi pages/ components/ context/ lib/; tampilan publik tidak berubah.
+- Testing: iteration_4 backend 16/16, frontend semua alur lulus; temuan minor sudah diperbaiki.
+
+## Next backlog (setelah fase 2)
+- P1: Upload portofolio langsung (object storage), notifikasi in-app/email, ulasan setelah booking selesai.
+- P1: Payment gateway sandbox (ditunda user), refund.
+- P2: Realtime chat (websocket), skenario uji ADDIE/SUS, rate limiting.
+- Catatan hosting: hPanel Hostinger (shared/cloud) hanya menyediakan MySQL; MongoDB perlu VPS Hostinger atau MongoDB Atlas.
+
+## Prioritized backlog (lama)
 ### P0 — next required
 - Integrasikan database-backed photographer dashboard dengan profil, portofolio, layanan, kalender, dan status verifikasi.
 - Lengkapi inbox/conversation history yang membaca dan mengurutkan pesan dari backend.

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
-import os, uuid, requests
+import os, uuid, httpx
 from core import db, public, now
 
 router = APIRouter()
@@ -19,7 +19,8 @@ def admin_emails():
 @router.post("/auth/session")
 async def auth_session(payload: OAuthSession, response: Response):
     try:
-        result = requests.get(SESSION_URL, headers={"X-Session-ID": payload.session_id}, timeout=10)
+        async with httpx.AsyncClient(timeout=10) as http:
+            result = await http.get(SESSION_URL, headers={"X-Session-ID": payload.session_id})
         if result.status_code >= 400:
             raise HTTPException(401, "Sesi Google tidak valid atau sudah kedaluwarsa")
         data = result.json()

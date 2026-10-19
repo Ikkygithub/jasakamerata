@@ -93,7 +93,7 @@ async def update_status(booking_id: str, payload: StatusUpdate, user=Depends(cur
     b = await db.bookings.find_one({"booking_id": booking_id, **role_filter(user)}, {"_id": 0})
     if not b:
         raise HTTPException(404, "Pesanan tidak ditemukan")
-    if payload.status not in TRANSITIONS[role].get(b["status"], []):
+    if payload.status not in TRANSITIONS.get(role, {}).get(b["status"], []):
         raise HTTPException(400, f"Status tidak dapat diubah dari {b['status']} ke {payload.status}")
     if payload.status == "accepted" and await conflicts(b["photographer_id"], b["date"], b["time"], b["duration"], ignore_booking=booking_id):
         raise HTTPException(409, "Jadwal bentrok dengan pesanan atau blokir lain")

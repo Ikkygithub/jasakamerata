@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional
 import re, uuid
 from core import db, CATEGORIES, HIDDEN_LISTING, encrypt, now, public
-from routers.availability import busy_slots, is_free
+from routers.availability import busy_slots, is_free, to_minutes
 
 router = APIRouter()
 VISIBLE = {"listing_status": {"$nin": HIDDEN_LISTING}}
@@ -50,6 +50,7 @@ async def available(date: str, time: str, duration: int = 2, category: Optional[
         query["category"] = category
     docs = await db.photographers.find(query, {"_id": 0}).to_list(200)
     result = []
+    to_minutes(time)
     for p in docs:
         if p["photographer_id"] != exclude and await is_free(p["photographer_id"], date, time, duration):
             result.append(p)

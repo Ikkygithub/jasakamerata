@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
-from core import db, now, new_id
+from core import db, now, new_id, HIDDEN_LISTING
 from auth import current_user
 
 router = APIRouter()
@@ -38,7 +38,7 @@ async def start_conversation(payload: ConversationCreate, user=Depends(current_u
     existing = await db.conversations.find_one({"customer_id": user["user_id"], "photographer_id": payload.photographer_id}, {"_id": 0})
     if existing:
         return existing
-    p = await db.photographers.find_one({"photographer_id": payload.photographer_id}, {"_id": 0, "name": 1, "profile_image": 1, "slug": 1})
+    p = await db.photographers.find_one({"photographer_id": payload.photographer_id, "listing_status": {"$nin": HIDDEN_LISTING}}, {"_id": 0, "name": 1, "profile_image": 1, "slug": 1})
     if not p:
         raise HTTPException(404, "Fotografer tidak ditemukan")
     conv = {"conversation_id": new_id("conv"), "customer_id": user["user_id"], "customer_name": user.get("name", "Customer"), "customer_picture": user.get("picture", ""), "photographer_id": payload.photographer_id, "photographer_name": p["name"], "photographer_image": p.get("profile_image", ""), "photographer_slug": p["slug"], "last_message": "", "last_at": now(), "unread_customer": 0, "unread_photographer": 0, "created_at": now()}

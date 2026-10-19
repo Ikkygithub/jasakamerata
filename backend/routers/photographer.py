@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
-from core import db, now, new_id, public, encrypt, audit, CATEGORIES
+from core import db, now, new_id, public, audit
 from auth import require_role
 from routers.availability import to_minutes, validate_date
 
@@ -144,10 +144,11 @@ async def list_blocks(user=Depends(me)):
 
 @router.post("/availability")
 async def add_block(payload: BlockIn, user=Depends(me)):
+    p = await profile_of(user)
     validate_date(payload.date)
     if to_minutes(payload.start) >= to_minutes(payload.end):
         raise HTTPException(400, "Jam selesai harus setelah jam mulai")
-    blk = {"block_id": new_id("blk"), "photographer_id": user["photographer_id"], **payload.model_dump(), "created_at": now()}
+    blk = {"block_id": new_id("blk"), "photographer_id": p["photographer_id"], **payload.model_dump(), "created_at": now()}
     await db.availability_blocks.insert_one(dict(blk))
     return blk
 
@@ -167,6 +168,7 @@ async def list_payouts(user=Depends(me)):
 
 @router.post("/payouts")
 async def request_payout(payload: PayoutIn, user=Depends(me)):
+    await profile_of(user)
     wallet = await wallet_of(user)
     if payload.amount > wallet["available"]:
         raise HTTPException(400, "Jumlah melebihi saldo yang dapat dicairkan")

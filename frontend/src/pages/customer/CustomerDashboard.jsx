@@ -67,7 +67,7 @@ export default function CustomerDashboard() {
     <DashShell eyebrow="RUANG KAMU" title={`Halo, ${user.name?.split(" ")[0] || "kamu"}.`} subtitle="Kelola pesanan, percakapan, dan fotografer favoritmu." tabs={tabs} active={key}>
       {key === "overview" && (data ? <Overview data={data} reload={reload} /> : <p className="muted">Memuat...</p>)}
       {key === "orders" && <Orders />}
-      {key === "chat" && <Inbox role="customer" />}
+      {key === "chat" && <Inbox role="customer" onRead={reload} />}
       {key === "favorites" && <Favorites />}
     </DashShell>
   );

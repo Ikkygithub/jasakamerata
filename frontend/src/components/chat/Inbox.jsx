@@ -4,13 +4,18 @@ import { MessageCircle } from "lucide-react";
 import { api, fmtTime } from "@/lib/api";
 import { ChatThread } from "./ChatThread";
 
-export function Inbox({ role }) {
+export function Inbox({ role, onRead }) {
   const [list, setList] = useState(null);
   const [params, setParams] = useSearchParams();
   const active = params.get("c");
 
   const load = useCallback(() => api.get("/chat/conversations").then(setList).catch(() => setList([])), []);
   useEffect(() => { load(); const t = setInterval(load, 8000); return () => clearInterval(t); }, [load]);
+  useEffect(() => {
+    if (!active) return;
+    const t = setTimeout(() => { load(); onRead?.(); }, 800);
+    return () => clearTimeout(t);
+  }, [active, load, onRead]);
 
   if (!list) return <p className="muted">Memuat percakapan...</p>;
   if (!list.length) return <div className="empty" data-testid="inbox-empty"><MessageCircle size={24} /><p>Belum ada percakapan.</p></div>;

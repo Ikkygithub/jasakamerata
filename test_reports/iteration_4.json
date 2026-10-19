@@ -1,0 +1,47 @@
+{
+  "summary": "Phase-2 full test (backend + frontend) of Jasa Kamera: bookings + conflict checks, availability calendar/blocks, chat conversations, Studio, Admin, role guards. Backend: 16/16 pytest pass (new test_phase2_api.py + updated legacy test_marketplace_api.py). Frontend: all requested flows worked end to end with seeded sessions (customer booking success + conflict alternatives, chat persists, favorites persist, dashboards; studio accept/block/service CRUD/gallery/inbox reply/payout; admin approve photographer -> becomes public, approve payout, audit log; role-guard redirects). Only minor validation and UX issues found.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/bookings (routers/availability.to_minutes)", "issue": "Time is not range-checked: '25:99' is accepted (200) and saved. to_minutes should reject hour>23 or minute>59."},
+      {"endpoint": "POST /api/bookings conflicts()", "issue": "Bookings that run past midnight (e.g. 23:30 + 12h) are only checked against the same date, so they won't clash with next-day bookings or blocks. Either cap end time at 24:00 or also check the next day."},
+      {"endpoint": "GET /api/photographers/{slug}/availability?month=", "issue": "month goes straight into a Mongo $regex without validation. month='.*' returns every slot for all months. Check it matches ^\\d{4}-\\d{2}$ or use re.escape."},
+      {"endpoint": "POST /api/chat/conversations, POST /api/favorites", "issue": "These don't check listing_status, so customers can chat with or favorite pending/rejected photographers if they know the photographer_id. GET /api/favorites also returns hidden photographers."},
+      {"endpoint": "POST /api/photographer/availability, /payouts", "issue": "They use user['photographer_id'] (KeyError -> 500) when a photographer user has no linked profile. Other endpoints use .get. Use profile_of(user) for consistency."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AvailabilityCalendar", "issue": "Possible race when switching months quickly: the fetch result isn't tied to the current month (no abort or stale guard). In one run, 2026-11-20 (accepted booking) showed as free right after clicking next-month. It rendered correctly on retry, so this is intermittent or timing-related.", "selector": "[data-testid=calendar-day-2026-11-20]", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Studio Chat badge", "issue": "After opening a conversation in /studio/chat, the 'Chat 1' unread badge on the dashboard tabs stays until you navigate away. Overview data isn't reloaded after the messages are read.", "affected_selectors": ["[data-testid=dash-tab-chat]"]},
+      {"flow": "Studio Pesanan", "issue": "The default filter is 'Menunggu', so an accepted booking disappears straight away after clicking Terima. It works, but the confirmation is weak; only a toast shows.", "affected_selectors": ["[data-testid^=booking-action-accepted-]"]}
+    ],
+    "design_issues": [
+      {"screen": "Studio/Admin dashboard tabs on mobile (390px)", "issues": ["Tabs scroll horizontally (overflow-x:auto) but there is no visual hint. Portofolio/Chat/Wallet/Profil are hidden off-screen."]},
+      {"screen": "Customer/Profile booking calendar", "issues": ["Completed bookings (e.g. 2026-12-10) are not shown as busy. This is by design (only accepted bookings block), which is fine."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_phase2_api.py", "/app/backend/tests/test_marketplace_api.py", "/app/backend/tests/probe_edges.py", "/app/test_reports/pytest/pytest_phase2.xml"],
+  "action_items": [
+    "Validate HH:MM range in to_minutes (0-23 / 0-59)",
+    "Validate the month query param format (YYYY-MM) before using it in $regex",
+    "Block chat/favorites for hidden (pending/rejected) photographers",
+    "Handle or prevent bookings that cross midnight",
+    "Optional: refresh the Studio unread badge after reading a conversation; add a stale-response guard in AvailabilityCalendar"
+  ],
+  "critical_code_review_comments": [
+    "Security is good: bank_account_encrypted and bank_snapshot_encrypted are never returned (registration, /photographer/me, /admin/users, /admin/payouts all checked). Role isolation on bookings and chat returns 404 for non-participants.",
+    "Accepting a booking re-checks for conflicts (409), confirmed. Two pending bookings for overlapping times are allowed by design until one is accepted.",
+    "auth.py auth_session uses blocking requests.get inside an async endpoint. Consider httpx.AsyncClient.",
+    "require_role/current_user: an unknown role string would raise a KeyError in TRANSITIONS[role] (500)."
+  ],
+  "updated_files": ["/app/backend/tests/test_phase2_api.py (new)", "/app/backend/tests/test_marketplace_api.py (replaced removed /api/chat/messages with /api/chat/conversations; unique registration email)", "/app/backend/tests/probe_edges.py (new)"],
+  "success_rate": {"backend": "100% (16/16 pytest); 3 minor validation gaps found by probes", "frontend": "100% of requested flows passed"},
+  "test_credentials": "Seeded bearer/cookie tokens from /app/memory/test_credentials.md: test_session_customer, test_session_customer2, test_session_photographer (ph_01), test_session_admin. All worked.",
+  "seed_data_creation": "Test bookings, blocks, payouts and registered photographers were cleaned up (TEST_ prefix / test_reg_ emails). Leftovers: chat messages in the test_customer<->ph_01 conversation, and one 50000 payout that the pytest flow rejected and then deleted. The seeded 100000 payout is still 'requested'. Public photographer count is back to 12.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: REACT_APP_BACKEND_URL=... pytest /app/backend/tests -v. test_phase2_api.py uses random 2027 dates and cleans up via pymongo (localhost MONGO). The legacy test expects exactly 12 public photographers, so approved TEST photographers must be cleaned up. For UI, set cookie session_token on domain foto-makassar.preview.emergentagent.com. The Studio Pesanan tab defaults to the 'Menunggu' filter."
+}

@@ -12,7 +12,10 @@ export function AvailabilityCalendar({ slug, value, onChange, refreshKey = 0, al
   const month = `${cursor.y}-${pad(cursor.m + 1)}`;
 
   useEffect(() => {
-    api.get(`/photographers/${slug}/availability?month=${month}`).then(setSlots).catch(() => setSlots([]));
+    let live = true;
+    setSlots([]);
+    api.get(`/photographers/${slug}/availability?month=${month}`).then((s) => live && setSlots(s)).catch(() => {});
+    return () => { live = false; };
   }, [slug, month, refreshKey]);
 
   const first = new Date(cursor.y, cursor.m, 1);
