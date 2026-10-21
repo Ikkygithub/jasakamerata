@@ -12,7 +12,7 @@ db = client[os.environ["DB_NAME"]]
 cipher = Fernet(base64.urlsafe_b64encode(hashlib.sha256(mongo_url.encode()).digest()))
 
 CATEGORIES = ["Wedding", "Commercial", "Event", "Graduation"]
-COMMISSION_RATE = 0.10
+COMMISSION_RATE = 0.05
 HIDDEN_LISTING = ["pending", "rejected"]
 SECRET_FIELDS = {"_id", "bank_account_encrypted", "bank_snapshot_encrypted"}
 

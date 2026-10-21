@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, X, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import { api, money } from "@/lib/api";
+import { api, money, mediaUrl } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 
@@ -12,7 +12,7 @@ function Alternatives({ list, close }) {
       <p className="eyebrow">JADWAL BENTROK · ALTERNATIF TERSEDIA</p>
       {list.length ? list.map((a) => (
         <Link key={a.photographer_id} to={`/fotografer/${a.slug}`} onClick={close} className="alt-item" data-testid={`alternative-${a.photographer_id}`}>
-          <img src={a.profile_image || a.gallery?.[0]} alt={a.name} /><span><b>{a.name}</b><small>{a.category} · mulai {money(a.starting_price)}</small></span><ArrowRight size={15} />
+          <img src={mediaUrl(a.profile_image || a.gallery?.[0])} alt={a.name} /><span><b>{a.name}</b><small>{a.category} · mulai {money(a.starting_price)}</small></span><ArrowRight size={15} />
         </Link>
       )) : <p className="muted">Belum ada fotografer lain yang kosong di waktu tersebut. Coba tanggal lain.</p>}
     </div>
@@ -22,7 +22,7 @@ function Alternatives({ list, close }) {
 export function BookingModal({ p, close }) {
   const { user } = useAuth();
   const nav = useNavigate();
-  const [form, setForm] = useState({ service_id: p.services[0]?.service_id || "", date: "", time: "09:00", duration: p.min_duration || 2, location: "", notes: "" });
+  const [form, setForm] = useState({ service_id: p.services[0]?.service_id || "", date: "", time: "09:00", duration: p.min_duration || 2, location: "", notes: "", agree_policy: false });
   const [alts, setAlts] = useState(null);
   const [done, setDone] = useState(null);
   const [sending, setSending] = useState(false);
@@ -33,6 +33,7 @@ export function BookingModal({ p, close }) {
     e.preventDefault();
     if (!user) { toast("Masuk terlebih dahulu untuk mengajukan booking"); nav("/masuk"); return; }
     if (!form.date) { toast("Pilih tanggal di kalender"); return; }
+    if (!form.agree_policy) { toast("Setujui kebijakan pemesanan terlebih dahulu"); return; }
     setSending(true); setAlts(null);
     try {
       setDone(await api.post("/bookings", { ...form, photographer_id: p.photographer_id, duration: Number(form.duration) }));
@@ -64,7 +65,9 @@ export function BookingModal({ p, close }) {
         </div>
         <label>Lokasi sesi<input required value={form.location} onChange={set("location")} placeholder="Contoh: Pantai Losari" data-testid="booking-location-input" /></label>
         <label>Catatan<textarea value={form.notes} onChange={set("notes")} data-testid="booking-notes-input" /></label>
-        {service && <p className="booking-total" data-testid="booking-total">Estimasi total <b>{money(service.price)}</b></p>}
+        {service && <p className="booking-total" data-testid="booking-total">Total harga paket <b>{money(service.price)}</b></p>}
+        <p className="muted small">Pembayaran online belum aktif — pesanan ini belum menagih dana (DEMO).</p>
+        <label className="check"><input type="checkbox" checked={form.agree_policy} onChange={(e) => setForm({ ...form, agree_policy: e.target.checked })} data-testid="booking-agree-checkbox" /> Saya memahami ruang lingkup paket dan menyetujui <Link to="/kebijakan/pembatalan-refund" target="_blank">kebijakan pembatalan, revisi & sengketa</Link>.</label>
         {alts && <Alternatives list={alts} close={close} />}
         <button className="olive-btn full" disabled={sending} data-testid="booking-submit">{sending ? "Mengirim..." : "Kirim permintaan"} <ArrowRight size={16} /></button>
       </form>

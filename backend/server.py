@@ -3,11 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import os, logging
 from core import client
 from seed import seed_data
+from storage import init_storage
 import auth
 from routers import catalog, bookings, chat, customer, photographer, admin
 
 logging.basicConfig(level=logging.INFO)
-app = FastAPI(title="Jasa Kamera API")
+app = FastAPI(title="Jasakamerata API")
 api = APIRouter(prefix="/api")
 for r in [catalog.router, auth.router, bookings.router, chat.router, customer.router, photographer.router, admin.router]:
     api.include_router(r)
@@ -20,6 +21,7 @@ app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=[] if "
 @app.on_event("startup")
 async def startup():
     await seed_data()
+    init_storage()
 
 
 @app.on_event("shutdown")

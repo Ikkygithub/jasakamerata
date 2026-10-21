@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { X } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, mediaUrl } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { ChatThread } from "./ChatThread";
 
@@ -27,7 +27,7 @@ export function ChatModal({ p, close }) {
     <div className="modal-backdrop">
       <div className="chat-modal" data-testid="chat-modal">
         <button className="modal-close" onClick={close} data-testid="close-chat"><X size={18} /></button>
-        <div className="chat-head"><img src={p.profile_image} alt={p.name} /><div><h3>{p.name}</h3><span>Riwayat chat tersimpan di menu Chat</span></div></div>
+        <div className="chat-head"><img src={mediaUrl(p.profile_image || p.gallery?.[0])} alt={p.name} /><div><h3>{p.name}</h3><span>Riwayat chat tersimpan di menu Chat</span></div></div>
         {content}
       </div>
     </div>

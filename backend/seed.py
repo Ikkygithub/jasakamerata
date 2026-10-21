@@ -1,4 +1,7 @@
-from core import db, CATEGORIES
+import os
+
+from core import CATEGORIES, db, new_id, now
+from ledger import backfill
 
 IMAGES = [
     "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1200&auto=format&fit=crop",
@@ -40,3 +43,16 @@ async def seed_data():
     await db.conversations.create_index([("customer_id", 1), ("photographer_id", 1)], unique=True)
     await db.messages.create_index([("conversation_id", 1), ("created_at", 1)])
     await db.favorites.create_index([("user_id", 1), ("photographer_id", 1)], unique=True)
+
+    await db.portfolio_items.create_index([("photographer_id", 1), ("order", 1)])
+    async for p in db.photographers.find({}, {"photographer_id": 1, "gallery": 1}):
+        if await db.portfolio_items.count_documents({"photographer_id": p["photographer_id"]}):
+            continue
+        items = [{"item_id": new_id("pf"), "photographer_id": p["photographer_id"], "url": u, "title": "", "description": "", "order": i, "is_cover": i == 0, "is_deleted": False, "created_at": now()} for i, u in enumerate(p.get("gallery", []))]
+        if items:
+            await db.portfolio_items.insert_many(items)
+    admins = [e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()]
+    if admins:
+        await db.users.update_many({"email": {"$in": admins}}, {"$set": {"role": "admin"}})
+    await db.photographers.update_many({"verification": {"$exists": False}}, [{"$set": {"verification": {"status": {"$cond": ["$verified", "approved", "not_submitted"]}}}}])
+    await backfill()

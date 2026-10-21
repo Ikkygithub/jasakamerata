@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MessageCircle } from "lucide-react";
-import { api, fmtTime } from "@/lib/api";
+import { api, fmtTime, mediaUrl } from "@/lib/api";
 import { ChatThread } from "./ChatThread";
 
 export function Inbox({ role, onRead }) {
@@ -30,7 +30,7 @@ export function Inbox({ role, onRead }) {
           const unread = c[`unread_${role}`];
           return (
             <button key={c.conversation_id} className={c.conversation_id === active ? "inbox-item active" : "inbox-item"} onClick={() => setParams({ c: c.conversation_id })} data-testid={`conversation-${c.conversation_id}`}>
-              {o.img ? <img src={o.img} alt={o.name} /> : <span className="avatar">{o.name?.[0]}</span>}
+              {o.img ? <img src={mediaUrl(o.img)} alt={o.name} /> : <span className="avatar">{o.name?.[0]}</span>}
               <span className="inbox-copy"><b>{o.name}</b><small>{c.last_message || "Belum ada pesan"}</small></span>
               <span className="inbox-meta"><small>{fmtTime(c.last_at)}</small>{unread > 0 && <i data-testid={`unread-${c.conversation_id}`}>{unread}</i>}</span>
             </button>

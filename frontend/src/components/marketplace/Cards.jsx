@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Heart, ArrowRight, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { money } from "@/lib/api";
+import { money, mediaUrl } from "@/lib/api";
 import { IMG } from "@/lib/data";
 
 export function PhotographerCard({ p, featured = false }) {
@@ -10,7 +10,7 @@ export function PhotographerCard({ p, featured = false }) {
   return (
     <article className={featured ? "photo-card featured" : "photo-card"} data-testid={`photographer-card-${p.photographer_id}`}>
       <div className="photo-cover">
-        <img src={p.gallery?.[0] || IMG[0]} alt={p.name} />
+        <img src={mediaUrl(p.gallery?.[0]) || IMG[0]} alt={p.name} loading="lazy" />
         <button className={fav ? "save active" : "save"} onClick={() => toggleFavorite(p.photographer_id)} data-testid={`favorite-${p.photographer_id}`}>
           <Heart size={17} fill={fav ? "currentColor" : "none"} />
         </button>
@@ -35,7 +35,7 @@ export function PhotographerCard({ p, featured = false }) {
 export function ServiceCard({ s, onClick }) {
   const body = (
     <>
-      <img src={s.image || IMG[1]} alt={s.title} />
+      <img src={mediaUrl(s.image) || IMG[1]} alt={s.title} loading="lazy" />
       <div className="service-copy">
         <p className="eyebrow">{s.category} · {s.pricing_type}</p>
         <h3>{s.title}</h3>

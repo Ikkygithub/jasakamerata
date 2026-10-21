@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import "@/App.css";
 import "@/dashboard.css";
@@ -11,6 +11,7 @@ import AuthPage, { AuthCallback } from "@/pages/AuthPage";
 import CustomerDashboard from "@/pages/customer/CustomerDashboard";
 import PhotographerDashboard from "@/pages/photographer/PhotographerDashboard";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
+import PolicyPage from "@/pages/PolicyPage";
 
 const guard = (role, el) => <RoleGuard role={role}>{el}</RoleGuard>;
 
@@ -30,6 +31,9 @@ function AppRouter() {
       <Route path="/studio/:tab" element={guard("photographer", <PhotographerDashboard />)} />
       <Route path="/admin" element={guard("admin", <AdminDashboard />)} />
       <Route path="/admin/:tab" element={guard("admin", <AdminDashboard />)} />
+      <Route path="/photographer/dashboard" element={<Navigate to="/studio" replace />} />
+      <Route path="/kebijakan" element={<PolicyPage />} />
+      <Route path="/kebijakan/:slug" element={<PolicyPage />} />
       <Route path="*" element={<Home />} />
     </Routes>
   );

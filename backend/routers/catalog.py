@@ -1,25 +1,17 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, HTTPException, Response
 from typing import Optional
-import re, uuid
-from core import db, CATEGORIES, HIDDEN_LISTING, encrypt, now, public
+import re
+from core import db, CATEGORIES, HIDDEN_LISTING
+from storage import load
 from routers.availability import busy_slots, is_free, to_minutes
 
 router = APIRouter()
 VISIBLE = {"listing_status": {"$nin": HIDDEN_LISTING}}
 
 
-class PhotographerRegistration(BaseModel):
-    name: str = Field(min_length=2, max_length=80)
-    email: str = Field(min_length=5, max_length=120)
-    category: str
-    bank_account: str = Field(min_length=8, max_length=30)
-    location: str = "Makassar, Sulawesi Selatan"
-
-
 @router.get("/")
 async def root():
-    return {"message": "Jasa Kamera API aktif", "categories": CATEGORIES}
+    return {"message": "Jasakamerata API aktif", "categories": CATEGORIES}
 
 
 @router.get("/categories")
@@ -35,12 +27,21 @@ async def list_photographers(category: Optional[str] = None, search: Optional[st
     if search:
         s = re.escape(search)
         query["$or"] = [{"name": {"$regex": s, "$options": "i"}}, {"category": {"$regex": s, "$options": "i"}}]
-    docs = await db.photographers.find(query, {"_id": 0}).to_list(200)
+    docs = await db.photographers.find(query, {"_id": 0, "user_id": 0}).to_list(200)
     if sort == "harga-rendah":
         docs.sort(key=lambda x: x["starting_price"])
     if sort == "rating":
         docs.sort(key=lambda x: x.get("rating") or 0, reverse=True)
     return docs
+
+
+@router.get("/photographers/featured")
+async def featured():
+    result = []
+    for c in CATEGORIES:
+        docs = await db.photographers.find({**VISIBLE, "category": c}, {"_id": 0}).sort([("verified", -1), ("rating", -1)]).to_list(2)
+        result.extend(docs)
+    return result
 
 
 @router.get("/photographers/available")
@@ -59,9 +60,10 @@ async def available(date: str, time: str, duration: int = 2, category: Optional[
 
 @router.get("/photographers/{slug}")
 async def get_photographer(slug: str):
-    doc = await db.photographers.find_one({"slug": slug, **VISIBLE}, {"_id": 0})
+    doc = await db.photographers.find_one({"slug": slug, **VISIBLE}, {"_id": 0, "user_id": 0})
     if not doc:
         raise HTTPException(404, "Fotografer tidak ditemukan")
+    doc["portfolio"] = await db.portfolio_items.find({"photographer_id": doc["photographer_id"], "is_deleted": False}, {"_id": 0, "item_id": 1, "url": 1, "title": 1, "description": 1}).sort([("is_cover", -1), ("order", 1)]).to_list(100)
     return doc
 
 
@@ -84,20 +86,17 @@ async def services(category: Optional[str] = None):
     return result
 
 
-@router.post("/photographers/register")
-async def register_photographer(payload: PhotographerRegistration):
-    if payload.category not in CATEGORIES:
-        raise HTTPException(400, "Pilih salah satu dari empat kategori yang tersedia")
-    digits = re.sub(r"\D", "", payload.bank_account)
-    if len(digits) < 8:
-        raise HTTPException(400, "Nomor rekening minimal 8 digit angka")
-    email = payload.email.strip().lower()
-    if await db.users.find_one({"email": email}, {"_id": 1}):
-        raise HTTPException(409, "Email sudah terdaftar. Silakan masuk dengan Google.")
-    user_id = f"user_{uuid.uuid4().hex[:12]}"
-    pid = f"ph_{uuid.uuid4().hex[:8]}"
-    slug = re.sub(r"[^a-z0-9]+", "-", payload.name.lower()).strip("-") + "-" + pid[-4:]
-    masked = "••••" + digits[-4:]
-    await db.users.insert_one({"user_id": user_id, "email": email, "name": payload.name, "role": "photographer", "photographer_id": pid, "category": payload.category, "bank_account_encrypted": encrypt(digits), "bank_account_masked": masked, "created_at": now()})
-    await db.photographers.insert_one({"photographer_id": pid, "user_id": user_id, "slug": slug, "name": payload.name, "username": "@" + slug.replace("-", ""), "category": payload.category, "location": payload.location, "bio": "Profil baru di Jasa Kamera.", "profile_image": "", "gallery": [], "verified": False, "demo": False, "listing_status": "pending", "rating": None, "reviews": 0, "starting_price": 0, "min_duration": 2, "service_area": "Makassar dan sekitarnya", "services": [], "created_at": now()})
-    return public({"user_id": user_id, "photographer_id": pid, "name": payload.name, "category": payload.category, "bank_account_masked": masked, "verification_status": "pending"})
+@router.get("/media/{item_id}")
+async def media(item_id: str):
+    it = await db.portfolio_items.find_one({"item_id": item_id, "is_deleted": False}, {"_id": 0})
+    if not it or not it.get("storage_path"):
+        raise HTTPException(404, "Foto tidak ditemukan")
+    return Response(content=await load(it["storage_path"]), media_type=it["content_type"], headers={"Cache-Control": "public, max-age=86400"})
+
+
+@router.get("/photographers/{slug}/reviews")
+async def reviews(slug: str):
+    p = await db.photographers.find_one({"slug": slug, **VISIBLE}, {"photographer_id": 1})
+    if not p:
+        raise HTTPException(404, "Fotografer tidak ditemukan")
+    return await db.reviews.find({"photographer_id": p["photographer_id"]}, {"_id": 0, "booking_id": 0}).sort("created_at", -1).to_list(50)

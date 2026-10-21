@@ -3,7 +3,7 @@ from datetime import date as Date
 import re
 from core import db
 
-BLOCKING_STATUSES = ["accepted"]
+BLOCKING_STATUSES = ["accepted", "delivered", "revision_requested", "disputed", "completed"]
 
 
 def to_minutes(t: str) -> int:

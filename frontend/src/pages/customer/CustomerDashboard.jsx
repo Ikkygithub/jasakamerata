@@ -28,6 +28,7 @@ function Overview({ data, reload }) {
           <Link to="/fotografer" data-testid="quick-search"><Search size={17} /> Cari fotografer <ChevronRight size={15} /></Link>
           <Link to="/customer/chat" data-testid="quick-chat"><MessageCircle size={17} /> Buka chat <ChevronRight size={15} /></Link>
           <Link to="/customer/favorit" data-testid="quick-favorites"><Heart size={17} /> Fotografer favorit <ChevronRight size={15} /></Link>
+          <Link to="/daftar" data-testid="quick-become-photographer"><ArrowRight size={17} /> Jadi fotografer <ChevronRight size={15} /></Link>
         </aside>
       </div>
     </>
@@ -58,13 +59,13 @@ export default function CustomerDashboard() {
   const reload = useCallback(() => api.get("/dashboard/summary").then(setData).catch(() => {}), []);
   useEffect(() => { reload(); }, [reload, key]);
   const tabs = [
-    { key: "overview", to: "/customer/dashboard", label: "Ringkasan" },
+    { key: "overview", to: "/customer/dashboard", label: "Profil Saya" },
     { key: "orders", to: "/customer/pesanan", label: "Pesanan", badge: data?.active_bookings },
     { key: "chat", to: "/customer/chat", label: "Chat", badge: data?.unread },
     { key: "favorites", to: "/customer/favorit", label: "Favorit" },
   ];
   return (
-    <DashShell eyebrow="RUANG KAMU" title={`Halo, ${user.name?.split(" ")[0] || "kamu"}.`} subtitle="Kelola pesanan, percakapan, dan fotografer favoritmu." tabs={tabs} active={key}>
+    <DashShell eyebrow="PROFIL SAYA" title={`Halo, ${user.name?.split(" ")[0] || "kamu"}.`} subtitle={`${user.email} · akun Google`} tabs={tabs} active={key}>
       {key === "overview" && (data ? <Overview data={data} reload={reload} /> : <p className="muted">Memuat...</p>)}
       {key === "orders" && <Orders />}
       {key === "chat" && <Inbox role="customer" onRead={reload} />}

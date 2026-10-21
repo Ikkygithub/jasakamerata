@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { api, money, fmtDate, fmtTime } from "@/lib/api";
+import { api, money, fmtDate } from "@/lib/api";
 import { AvailabilityCalendar } from "@/components/booking/AvailabilityCalendar";
-import { StatusPill } from "@/components/dashboard/BookingRow";
 
-const run = async (fn, ok) => { try { await fn(); if (ok) toast(ok); return true; } catch (e) { toast(e.message); return false; } };
+export const run = async (fn, ok) => { try { await fn(); if (ok) toast(ok); return true; } catch (e) { toast(e.message); return false; } };
 
 export function CalendarTab({ profile }) {
   const [blocks, setBlocks] = useState([]);
@@ -80,25 +79,6 @@ export function ServicesTab({ profile, reload }) {
   );
 }
 
-export function PortfolioTab({ profile, reload }) {
-  const [url, setUrl] = useState("");
-  const add = async (e) => { e.preventDefault(); if (await run(() => api.post("/photographer/gallery", { url }), "Foto ditambahkan")) { setUrl(""); reload(); } };
-  return (
-    <>
-      <form className="panel-form inline" onSubmit={add} data-testid="gallery-form">
-        <input required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Tempel URL gambar (https://...)" data-testid="gallery-url-input" />
-        <button className="olive-btn" data-testid="gallery-add-button"><Plus size={15} /> Tambah foto</button>
-      </form>
-      <p className="muted small">Unggah file langsung akan tersedia setelah penyimpanan objek diaktifkan. Saat ini gunakan tautan gambar.</p>
-      <div className="portfolio-grid editable" data-testid="studio-gallery">
-        {profile.gallery.map((g, i) => (
-          <div key={g + i} className="pf-item"><img src={g} alt={`Portofolio ${i + 1}`} /><button onClick={async () => { if (await run(() => api.del(`/photographer/gallery/${i}`), "Foto dihapus")) reload(); }} data-testid={`gallery-delete-${i}`}><Trash2 size={14} /></button></div>
-        ))}
-      </div>
-    </>
-  );
-}
-
 export function ProfileTab({ profile, reload }) {
   const [form, setForm] = useState({ bio: profile.bio, service_area: profile.service_area, profile_image: profile.profile_image, min_duration: profile.min_duration });
   const set = (k) => (e) => setForm({ ...form, [k]: k === "min_duration" ? Number(e.target.value) : e.target.value });
@@ -114,28 +94,3 @@ export function ProfileTab({ profile, reload }) {
   );
 }
 
-export function WalletTab({ wallet, reload }) {
-  const [amount, setAmount] = useState("");
-  const [payouts, setPayouts] = useState([]);
-  const load = useCallback(() => api.get("/photographer/payouts").then(setPayouts).catch(() => {}), []);
-  useEffect(() => { load(); }, [load]);
-  const request = async (e) => { e.preventDefault(); if (await run(() => api.post("/photographer/payouts", { amount: Number(amount) }), "Permintaan pencairan DEMO diajukan")) { setAmount(""); load(); reload(); } };
-  return (
-    <>
-      <div className="notice" data-testid="wallet-demo-notice">{wallet.note}</div>
-      <div className="stats four">
-        <div><span>Dapat dicairkan</span><b data-testid="wallet-available">{money(wallet.available)}</b></div>
-        <div><span>Total pendapatan selesai</span><b>{money(wallet.earned)}</b></div>
-        <div><span>Tertahan (jadwal diterima)</span><b>{money(wallet.pending)}</b></div>
-        <div><span>Rekening</span><b className="small-b" data-testid="wallet-bank-masked">{wallet.bank_account_masked}</b></div>
-      </div>
-      <form className="panel-form inline" onSubmit={request} data-testid="payout-form">
-        <input required type="number" min="50000" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Jumlah pencairan (min Rp50.000)" data-testid="payout-amount-input" />
-        <button className="olive-btn" data-testid="payout-submit">Ajukan pencairan</button>
-      </form>
-      <h3 className="list-title">Riwayat pencairan</h3>
-      {!payouts.length && <p className="muted">Belum ada permintaan pencairan.</p>}
-      {payouts.map((p) => <div className="mini-row" key={p.payout_id} data-testid={`payout-${p.payout_id}`}><span><b>{money(p.amount)}</b> ke {p.bank_account_masked} · {fmtTime(p.created_at)}</span><StatusPill status={p.status} /></div>)}
-    </>
-  );
-}

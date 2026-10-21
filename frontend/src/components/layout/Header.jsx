@@ -1,12 +1,32 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Menu, LogOut } from "lucide-react";
+import { Search, Menu, LogOut, ChevronDown, User, ClipboardList, MessageCircle, Heart } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/AuthContext";
 import { dashboardPath } from "@/lib/api";
+
+function CustomerMenu({ user, onLogout }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="user-trigger" data-testid="customer-menu-trigger">
+        {user.picture ? <img src={user.picture} alt="" /> : <span className="avatar">{user.name?.[0]}</span>}
+        <span className="user-name">{user.name?.split(" ")[0]}</span><ChevronDown size={14} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="user-menu">
+        {[["/customer/dashboard", "Profil Saya", User, "profile"], ["/customer/pesanan", "Pesanan Saya", ClipboardList, "orders"], ["/customer/chat", "Chat", MessageCircle, "chat"], ["/customer/favorit", "Favorit", Heart, "favorites"]].map(([to, label, Icon, k]) => (
+          <DropdownMenuItem key={to} asChild><Link to={to} data-testid={`customer-menu-${k}`}><Icon size={15} /> {label}</Link></DropdownMenuItem>
+        ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onLogout} data-testid="customer-menu-logout"><LogOut size={15} /> Keluar</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 function UserActions() {
   const { user, logout } = useAuth();
   const nav = useNavigate();
+  const out = async () => { await logout(); nav("/"); };
   if (!user) {
     return (
       <>
@@ -15,12 +35,11 @@ function UserActions() {
       </>
     );
   }
+  if ((user.role || "customer") === "customer") return <CustomerMenu user={user} onLogout={out} />;
   return (
     <>
-      <Link to={dashboardPath(user.role)} className="dark-btn compact" data-testid="header-dashboard">
-        {user.role === "admin" ? "Admin" : user.role === "photographer" ? "Studio" : "Ruang Saya"}
-      </Link>
-      <button className="icon-btn" title="Keluar" onClick={async () => { await logout(); nav("/"); }} data-testid="logout-button"><LogOut size={18} /></button>
+      <Link to={dashboardPath(user.role)} className="dark-btn compact" data-testid="header-dashboard">{user.role === "admin" ? "Admin" : "Studio"}</Link>
+      <button className="icon-btn" title="Keluar" onClick={out} data-testid="logout-button"><LogOut size={18} /></button>
     </>
   );
 }
@@ -29,7 +48,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   return (
     <header className="site-header">
-      <Link to="/" className="brand" data-testid="brand-home"><span className="brand-mark">JK</span><span>Jasa Kamera<small>MAKASSAR</small></span></Link>
+      <Link to="/" className="brand" data-testid="brand-home"><span className="brand-mark">J</span><span>Jasakamerata<small>MAKASSAR</small></span></Link>
       <nav className={open ? "open" : ""} data-testid="main-navigation">
         <Link to="/fotografer" data-testid="nav-photographers">Temukan Fotografer</Link>
         <a href="/#kategori" data-testid="nav-categories">Kategori</a>
@@ -50,13 +69,13 @@ export function Footer() {
     <footer>
       <div className="footer-main">
         <div>
-          <Link to="/" className="brand footer-brand"><span className="brand-mark">JK</span><span>Jasa Kamera<small>MAKASSAR</small></span></Link>
+          <Link to="/" className="brand footer-brand"><span className="brand-mark">J</span><span>Jasakamerata<small>MAKASSAR</small></span></Link>
           <p>Temukan fotografer yang tepat<br />untuk setiap momen.</p>
         </div>
         <div><b>Jelajahi</b><Link to="/fotografer">Cari fotografer</Link><a href="/#cara-kerja">Cara kerja</a><Link to="/untuk-fotografer">Untuk fotografer</Link></div>
-        <div><b>Bantuan</b><Link to="/kebijakan-privasi">Kebijakan privasi</Link><Link to="/syarat-ketentuan">Syarat & ketentuan</Link><a href="mailto:halo@jasakamera.id">Hubungi kami</a></div>
+        <div><b>Bantuan</b><Link to="/kebijakan/syarat-ketentuan">Syarat & ketentuan</Link><Link to="/kebijakan/privasi">Kebijakan privasi</Link><Link to="/kebijakan/pembayaran-komisi">Pembayaran & komisi</Link><Link to="/kebijakan/pembatalan-refund">Pembatalan & refund</Link><Link to="/kebijakan/penarikan-saldo">Penarikan saldo</Link><a href="mailto:halo@jasakamerata.com">Hubungi kami</a></div>
       </div>
-      <div className="footer-bottom">© 2026 Jasa Kamera · Dibuat untuk Makassar · Data fotografer bertanda DEMO adalah fiktif</div>
+      <div className="footer-bottom">© 2026 Jasakamerata · Dibuat untuk Makassar · Komisi platform 5% · Data bertanda DEMO adalah fiktif</div>
     </footer>
   );
 }

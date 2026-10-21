@@ -39,7 +39,7 @@ function CategoryStrip() {
 export default function Home() {
   const [people, setPeople] = useState([]);
   const [services, setServices] = useState([]);
-  useEffect(() => { Promise.all([api.get("/photographers"), api.get("/services")]).then(([p, s]) => { setPeople(p); setServices(s); }).catch(() => {}); }, []);
+  useEffect(() => { Promise.all([api.get("/photographers/featured"), api.get("/services")]).then(([p, s]) => { setPeople(p); setServices(s); }).catch(() => {}); }, []);
   return (
     <>
       <Header />
@@ -56,8 +56,17 @@ export default function Home() {
         </section>
         <CategoryStrip />
         <section className="section cream-band">
-          <div className="section-heading"><div><p className="eyebrow">PILIHAN EDITOR</p><h2>Fotografer pilihan di Makassar.</h2></div><Link to="/fotografer" className="text-link" data-testid="featured-see-more">Lihat semua <ArrowRight size={16} /></Link></div>
-          <div className="photographer-grid">{people.slice(0, 4).map((p) => <PhotographerCard key={p.photographer_id} p={p} featured />)}</div>
+          <div className="section-heading"><div><p className="eyebrow">REKOMENDASI PER KATEGORI</p><h2>Fotografer pilihan di Makassar.</h2></div><Link to="/fotografer" className="text-link" data-testid="featured-see-more">Lihat semua <ArrowRight size={16} /></Link></div>
+          {CATEGORIES.map((c) => {
+            const list = people.filter((p) => p.category === c.name);
+            if (!list.length) return null;
+            return (
+              <div className="featured-group" key={c.name} data-testid={`featured-group-${c.name.toLowerCase()}`}>
+                <div className="featured-head"><h3>{c.name}</h3><Link to={`/fotografer?category=${c.name}`} className="text-link" data-testid={`featured-more-${c.name.toLowerCase()}`}>Semua {c.name} <ArrowRight size={14} /></Link></div>
+                <div className="photographer-grid two">{list.slice(0, 2).map((p) => <PhotographerCard key={p.photographer_id} p={p} />)}</div>
+              </div>
+            );
+          })}
         </section>
         <section className="section">
           <div className="section-heading"><div><p className="eyebrow">KATALOG PAKET</p><h2>Layanan untuk dibandingkan.</h2></div><Link to="/fotografer" className="text-link" data-testid="services-see-more">Jelajahi layanan <ArrowRight size={16} /></Link></div>
@@ -68,7 +77,7 @@ export default function Home() {
           <div className="step-grid">{STEPS.map((x) => <div className="step" key={x[0]}><b>{x[0]}</b><h3>{x[1]}</h3><p>{x[2]}</p></div>)}</div>
         </section>
         <section className="join-band">
-          <div><p className="eyebrow light">UNTUK FOTOGRAFER MAKASSAR</p><h2>Karya baik pantas ditemukan.</h2><p>Tampilkan portofolio, kelola paket, jadwal, dan pesananmu dalam satu ruang.</p></div>
+          <div><p className="eyebrow light">UNTUK FOTOGRAFER MAKASSAR</p><h2>Karya baik pantas ditemukan.</h2><p>Tampilkan portofolio, kelola paket, jadwal, dan pesananmu dalam satu ruang. Komisi platform hanya 5% dari pesanan selesai — 95% untukmu.</p></div>
           <Link to="/untuk-fotografer" className="white-btn" data-testid="join-photographer-cta">Bergabung sebagai fotografer <ArrowRight size={16} /></Link>
         </section>
       </main>
