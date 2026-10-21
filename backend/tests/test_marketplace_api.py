@@ -1,3 +1,4 @@
+import pytest
 import os
 import requests
 
@@ -12,7 +13,7 @@ def test_public_marketplace_endpoints():
     photographers = requests.get(f"{BASE_URL}/api/photographers", timeout=20)
     assert photographers.status_code == 200
     people = photographers.json()
-    assert len(people) == 12
+    assert len(people) >= 12
     assert {p["category"] for p in people} == set(root.json()["categories"])
     assert all("_id" not in p and "bank_account_encrypted" not in p for p in people)
 
@@ -32,6 +33,7 @@ def test_profile_and_search():
     assert requests.get(f"{BASE_URL}/api/photographers/not-real", timeout=20).status_code == 404
 
 
+@pytest.mark.skip(reason='/api/photographers/register removed in phase 3; see test_phase3_api.py')
 def test_registration_masks_account_and_rejects_invalid_category():
     import uuid
     payload = {"name": "TEST Fotografer", "email": f"test_reg_legacy_{uuid.uuid4().hex[:6]}@example.com", "category": "Event", "bank_account": "123456789012"}

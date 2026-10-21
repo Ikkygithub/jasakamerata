@@ -1,0 +1,52 @@
+{
+  "summary": "Tested Phase 3 end to end, backend and frontend. Backend: wrote a new pytest suite, /app/backend/tests/test_phase3_api.py, with 22 tests, all passing. It covers featured (max 2 per category), removal of the old register endpoint, onboarding (category, agree_policy and role guards), bank (masked output, digit validation, 403 for customers, blocked while a payout is open), portfolio (multipart upload, magic-byte check, size and type rejection, public /api/media, edit, cover, reorder, soft delete and gallery sync, other owner gets 404, customer gets 403), bookings (agree_policy required, 5%/95% split), the full lifecycle (deliver needs files or an https link, photographer can no longer complete, file download with other customer getting 404, revision/dispute need a note of at least 5 chars, re-deliver, completion writes exactly one earning and one platform_commission ledger entry, admin cancels a dispute with no ledger entry), reviews (customer only, completed only, 409 on a second review), wallet available matching the ledger sum, payout limits and the admin approve/process/success/reject/fail flow with funds released, the account endpoint limited to approved/processing, concurrency (2 parallel requests: exactly one 200 and one 400), verification (combined error messages, pending, admin doc view, needs_fix needs a note, resubmit, approve sets verified), admin endpoints (non-admin 403, no encrypted bank fields in users) and the listing toggle. Legacy suites updated: 33 passed, 5 obsolete tests skipped. Frontend (Playwright): checked branding, title, footer and policy pages; the 4 featured groups with 2 cards each; /daftar logged out (Google button) and logged in (no bank fields); UI onboarding redirecting to /studio; the 10 Studio tabs; portfolio upload with preview, image shown and a fake jpg rejected with an error; bank save showing a masked number; the customer dropdown (all 5 links plus logout); /photographer/dashboard redirecting; the full UI lifecycle (deliver file, customer download, revision via prompt, re-deliver link, approve, 4-star review); profile tabs including Ulasan; the booking modal (calendar, conflict, 2 alternatives, agree_policy enforced); payout UI (validation, reserve); admin UI (approve, process, reveal account, success with reference via prompt; verification doc view and needs_fix; publish/unpublish; all tabs); role guards; mobile header. Main problem found: /api/auth/me returns user.bank.number_encrypted.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/auth/me", "issue": "Returns the full user doc including bank.number_encrypted (Fernet ciphertext). The requirement says encrypted bank data is never returned. Only bank_view or the masked fields should be sent. Fix: in auth_me, pop 'bank' (or replace it with masked fields) and drop bank_account_encrypted.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/photographers/featured", "issue": "No projection on user_id (unlike /api/photographers and /{slug}, which exclude it), so the owner's internal user_id leaks publicly."},
+      {"endpoint": "POST /api/auth/session (auth.py:36)", "issue": "Default name for a new user is still 'Pengguna Jasa Kamera'. Should be 'Pengguna Jasakamerata'."},
+      {"endpoint": "GET /api/photographers/featured", "issue": "Sort puts verified first. A newly approved verified photographer with 0 services, no rating and starting_price 0 outranks seeded profiles and appears on the Home page (seen during testing with TEST photographers). Consider requiring at least 1 service and a portfolio for featured or the listing."},
+      {"endpoint": "POST /api/bookings/{id}/review", "issue": "The first verified review overwrites the seeded demo rating and review count (ph_01 now shows 5.0 with 1 review instead of its seeded aggregate). Fine if intended; otherwise blend or keep the seeded value until N real reviews exist."},
+      {"endpoint": "POST /api/photographer/onboard", "issue": "Not atomic: 2 concurrent calls by the same customer can create 2 photographer docs. Make the role update conditional ({role:'customer', photographer_id:{$exists:false}}) before inserting."},
+      {"endpoint": "POST /api/bookings/{id}/deliver", "issue": "Files are uploaded to storage before the conditional status update. If set_status hits a 409, orphaned delivery files and the delivery doc remain."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Admin Payouts row", "issue": "After 'reveal', the full account number stays on screen even after the payout moves to success, until reload. Hide it once the status leaves approved/processing.", "selector": "[data-testid^='admin-payout-reveal-']", "priority": "LOW"},
+      {"component": "Onboard form", "issue": "Submitting without ticking the agree checkbox gives no visible feedback (no toast or error text).", "selector": "[data-testid='photographer-register-submit']", "priority": "LOW"},
+      {"component": "Portfolio upload", "issue": "The native file input keeps showing the previous filename after a successful upload (preview and title are reset, the input is not).", "selector": "[data-testid='portfolio-file-input']", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Home hero search / Booking modal", "issues": ["The hero date field is a native browser date picker (mm/dd/yyyy, US format), not the shadcn Calendar; it is inconsistent with the custom booking calendar.", "The booking 'Jam mulai' field is a native time input in 12h AM/PM format; an Indonesian app should use 24h."]},
+      {"screen": "Booking modal agree checkbox", "issues": ["The label text and the policy link render as separate columns with a stray '.' after the link. Make them inline text."]},
+      {"screen": "Admin Komisi & Ledger", "issues": ["The Jenis column mixes a localized label ('Komisi platform 5%') with raw types (earning, payout_reserve, payout_release). The Fotografer column shows ph_01 instead of the name."]},
+      {"screen": "Customer Pesanan row", "issues": ["'Ulasan sudah dikirim.Lihat riwayat status' is missing a space between the two pieces of text."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_phase3_api.py", "/app/backend/tests/test_phase2_api.py", "/app/backend/tests/test_marketplace_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "HIGH: Strip bank.number_encrypted and bank_account_encrypted from the GET /api/auth/me response.",
+    "Exclude user_id in the /api/photographers/featured projection.",
+    "Change the default new-user name in auth.py to 'Pengguna Jasakamerata'.",
+    "Consider gating featured/public listing on at least 1 service and 3 portfolio items.",
+    "Minor UI polish: native date/time pickers, agree-checkbox layout, ledger type labels, hiding the revealed account after a payout ends, onboard no-agree feedback."
+  ],
+  "critical_code_review_comments": [
+    "photographer.py is 352 lines and mixes many concerns (portfolio, bank, payouts, verification). Consider splitting.",
+    "Onboarding race: the users.update_one is not conditional, so double-submit creates duplicate photographer docs.",
+    "Deliver uploads files before the status CAS, which can orphan files on a 409.",
+    "wallets.available is a denormalized counter maintained alongside the ledger; it matched the ledger sum in all tests. A periodic reconciliation check is recommended.",
+    "Payout concurrency is handled correctly with an atomic $gte conditional $inc (verified with 2 parallel requests)."
+  ],
+  "updated_files": ["/app/backend/tests/test_phase3_api.py (new)", "/app/backend/tests/test_phase2_api.py (book() sends agree_policy; obsolete register/gallery/old-wallet/old-admin tests skipped; lifecycle expects photographer completed -> 400)", "/app/backend/tests/test_marketplace_api.py (register test skipped; photographer count >= 12)"],
+  "success_rate": {"backend": "100% of new phase-3 tests (22/22); 1 data-leak issue found by manual probe", "frontend": "~95% (all flows work; minor UI/design issues)"},
+  "seed_data_creation": "Tests create TEST_* users/photographers and clean them up; test reviews deleted and ph_01 rating recomputed (5.0 from 1 real 'Mantap' review). ph_01 portfolio order restored. ph_01 bank is now BCA / Naya / 1234567890 (masked ••••7890). New completed bookings on ph_01 (wallet about Rp4.3M); several TEST payouts in success/rejected/failed states remain for history.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && REACT_APP_BACKEND_URL=... python -m pytest tests/ -n 0 (pytest.ini adds xdist; use -n 0 for sequential). test_phase3_api.py uses pymongo to create fresh customer sessions (TEST_*_RUN) and cleans them up. UI prompts are handled with page.on('dialog', async_handler). Admin tabs use data-testid dash-tab-{key}. The admin photographers list defaults to the 'pending' filter. Server date is 2026-10-21. Check that /api/auth/me no longer contains number_encrypted after the fix.",
+  "rca of the issue": "auth.py auth_me returns public(await current_user(request)), which only removes _id. Phase 3 stores bank {number_encrypted, ...} on the user document, so it is sent to the client. Reproduce: curl -H 'Authorization: Bearer test_session_photographer' $URL/api/auth/me shows bank.number_encrypted. Mitigation: project out bank.number_encrypted and bank_account_encrypted in auth_me (or in current_user's find_one projection, but payout code needs user['bank']['number_encrypted'], so filter only in the response)."
+}

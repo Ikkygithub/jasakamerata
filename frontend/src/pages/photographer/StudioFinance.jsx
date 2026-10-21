@@ -100,7 +100,7 @@ export function VerificationTab({ profile, reload }) {
           <label>Tautan pendukung (Instagram/website)<input value={form.links} onChange={(e) => setForm({ ...form, links: e.target.value })} data-testid="verification-links-input" /></label>
           <label>KTP (JPG/PNG/PDF, maks 8 MB) — disimpan privat<input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" onChange={(e) => setFiles({ ...files, id_document: e.target.files[0] })} data-testid="verification-id-input" /></label>
           <label>Dokumen pendukung (opsional)<input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.zip" onChange={(e) => setFiles({ ...files, supporting: e.target.files[0] })} data-testid="verification-supporting-input" /></label>
-          <label className="check"><input type="checkbox" checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} data-testid="verification-consent-checkbox" /> Saya setuju dokumen disimpan privat untuk keperluan verifikasi sesuai <Link to="/kebijakan/privasi" target="_blank">kebijakan privasi</Link>.</label>
+          <label className="check"><input type="checkbox" checked={form.consent} onChange={(e) => setForm({ ...form, consent: e.target.checked })} data-testid="verification-consent-checkbox" /><span>Saya setuju dokumen disimpan privat untuk keperluan verifikasi sesuai <Link to="/kebijakan/privasi" target="_blank">kebijakan privasi</Link>.</span></label>
           <button className="olive-btn" disabled={busy} data-testid="verification-submit">{busy ? "Mengirim..." : "Kirim pengajuan"}</button>
         </form>
       ) : <div className="panel-form"><p>{v.status === "approved" ? "Profilmu sudah terverifikasi." : `Pengajuan ${STATUS[v.status]?.toLowerCase()}.`}</p></div>}

@@ -104,7 +104,7 @@ const PAYOUT_ACTIONS = { requested: [["approve", "Setujui"], ["reject", "Tolak"]
 function Payouts() {
   const [items, setItems] = useState([]);
   const [account, setAccount] = useState({});
-  const load = useCallback(() => api.get("/admin/payouts").then(setItems).catch(() => {}), []);
+  const load = useCallback(() => { setAccount({}); api.get("/admin/payouts").then(setItems).catch(() => {}); }, []);
   useEffect(() => { load(); }, [load]);
   const decide = (po, action) => {
     let note = "";
@@ -130,11 +130,13 @@ function Payouts() {
   ));
 }
 
+const LEDGER_TYPES = { platform_commission: "Komisi platform 5%", earning: "Pendapatan fotografer 95%", payout_reserve: "Cadangan penarikan", payout_release: "Pengembalian dana penarikan" };
+
 function Ledger() {
   const [items, setItems] = useState([]);
   useEffect(() => { api.get("/admin/ledger").then(setItems).catch(() => {}); }, []);
   if (!items.length) return <div className="empty"><p>Belum ada transaksi tercatat.</p></div>;
-  return <table className="data-table" data-testid="admin-ledger-table"><thead><tr><th>Waktu</th><th>Jenis</th><th>Fotografer</th><th>Referensi</th><th>Nominal</th></tr></thead><tbody>{items.map((e) => <tr key={e.entry_id}><td>{fmtTime(e.created_at)}</td><td>{e.type === "platform_commission" ? "Komisi platform 5%" : e.type}</td><td>{e.photographer_id || "Platform"}</td><td>{e.ref}</td><td>{money(e.amount)}</td></tr>)}</tbody></table>;
+  return <table className="data-table" data-testid="admin-ledger-table"><thead><tr><th>Waktu</th><th>Jenis</th><th>Fotografer</th><th>Referensi</th><th>Nominal</th></tr></thead><tbody>{items.map((e) => <tr key={e.entry_id}><td>{fmtTime(e.created_at)}</td><td>{LEDGER_TYPES[e.type] || e.type}</td><td>{e.photographer_name}</td><td>{e.ref}</td><td>{money(e.amount)}</td></tr>)}</tbody></table>;
 }
 
 function Users() {

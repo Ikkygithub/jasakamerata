@@ -23,6 +23,7 @@ function OnboardForm() {
   const [sending, setSending] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
+    if (!form.agree_policy) { toast("Centang persetujuan syarat dan kebijakan terlebih dahulu"); return; }
     setSending(true);
     try {
       await api.post("/photographer/onboard", form);
@@ -36,7 +37,7 @@ function OnboardForm() {
       <p className="muted">Masuk sebagai <b>{user.email}</b>. Rekening bank, portofolio, dan verifikasi profesional dilengkapi nanti di Studio.</p>
       <label>Nama profesional<input required minLength={2} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} data-testid="photographer-name-input" /></label>
       <label>Kategori utama<select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} data-testid="photographer-category-select">{CATEGORIES.map((c) => <option key={c.name}>{c.name}</option>)}</select></label>
-      <label className="check"><input type="checkbox" checked={form.agree_policy} onChange={(e) => setForm({ ...form, agree_policy: e.target.checked })} data-testid="photographer-agree-checkbox" /> Saya menyetujui <Link to="/kebijakan/syarat-ketentuan" target="_blank">syarat</Link>, <Link to="/kebijakan/pembayaran-komisi" target="_blank">komisi 5%</Link>, dan <Link to="/kebijakan/penarikan-saldo" target="_blank">kebijakan penarikan</Link>.</label>
+      <label className="check"><input type="checkbox" checked={form.agree_policy} onChange={(e) => setForm({ ...form, agree_policy: e.target.checked })} data-testid="photographer-agree-checkbox" /><span>Saya menyetujui <Link to="/kebijakan/syarat-ketentuan" target="_blank">syarat</Link>, <Link to="/kebijakan/pembayaran-komisi" target="_blank">komisi 5%</Link>, dan <Link to="/kebijakan/penarikan-saldo" target="_blank">kebijakan penarikan</Link>.</span></label>
       <button className="olive-btn full" disabled={sending} data-testid="photographer-register-submit">{sending ? "Membuat akun..." : "Buat akun fotografer"} <ArrowRight size={16} /></button>
     </form>
   );

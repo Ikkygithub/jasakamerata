@@ -6,6 +6,8 @@ import { api, money, mediaUrl } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 
+const TIMES = Array.from({ length: 33 }, (_, i) => `${String(6 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
+
 function Alternatives({ list, close }) {
   return (
     <div className="alt-box" data-testid="booking-alternatives">
@@ -60,14 +62,14 @@ export function BookingModal({ p, close }) {
         <label>Paket layanan<select value={form.service_id} onChange={set("service_id")} data-testid="booking-service-select">{p.services.map((s) => <option key={s.service_id} value={s.service_id}>{s.title} — {money(s.price)}</option>)}</select></label>
         <AvailabilityCalendar slug={p.slug} value={form.date} onChange={(d) => setForm({ ...form, date: d })} />
         <div className="two-col">
-          <label>Jam mulai<input required type="time" value={form.time} onChange={set("time")} data-testid="booking-time-input" /></label>
+          <label>Jam mulai<select value={form.time} onChange={set("time")} data-testid="booking-time-input">{TIMES.map((t) => <option key={t}>{t}</option>)}</select></label>
           <label>Durasi (jam)<input required type="number" min="1" max="12" value={form.duration} onChange={set("duration")} data-testid="booking-duration-input" /></label>
         </div>
         <label>Lokasi sesi<input required value={form.location} onChange={set("location")} placeholder="Contoh: Pantai Losari" data-testid="booking-location-input" /></label>
         <label>Catatan<textarea value={form.notes} onChange={set("notes")} data-testid="booking-notes-input" /></label>
         {service && <p className="booking-total" data-testid="booking-total">Total harga paket <b>{money(service.price)}</b></p>}
         <p className="muted small">Pembayaran online belum aktif — pesanan ini belum menagih dana (DEMO).</p>
-        <label className="check"><input type="checkbox" checked={form.agree_policy} onChange={(e) => setForm({ ...form, agree_policy: e.target.checked })} data-testid="booking-agree-checkbox" /> Saya memahami ruang lingkup paket dan menyetujui <Link to="/kebijakan/pembatalan-refund" target="_blank">kebijakan pembatalan, revisi & sengketa</Link>.</label>
+        <label className="check"><input type="checkbox" checked={form.agree_policy} onChange={(e) => setForm({ ...form, agree_policy: e.target.checked })} data-testid="booking-agree-checkbox" /><span>Saya memahami ruang lingkup paket dan menyetujui <Link to="/kebijakan/pembatalan-refund" target="_blank">kebijakan pembatalan, revisi & sengketa</Link>.</span></label>
         {alts && <Alternatives list={alts} close={close} />}
         <button className="olive-btn full" disabled={sending} data-testid="booking-submit">{sending ? "Mengirim..." : "Kirim permintaan"} <ArrowRight size={16} /></button>
       </form>

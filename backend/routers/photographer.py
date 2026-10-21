@@ -79,9 +79,11 @@ async def onboard(payload: Onboard, user=Depends(current_user)):
     if await db.bookings.count_documents({"customer_id": user["user_id"], "status": {"$in": ["pending", "accepted", "delivered", "revision_requested", "disputed"]}}):
         raise HTTPException(400, "Selesaikan pesanan aktif sebagai customer sebelum menjadi fotografer")
     pid = f"ph_{new_id('x')[-8:]}"
+    res = await db.users.update_one({"user_id": user["user_id"], "role": {"$in": ["customer", None]}, "photographer_id": {"$exists": False}}, {"$set": {"role": "photographer", "photographer_id": pid, "photographer_policy_agreed_at": now()}})
+    if not res.modified_count:
+        raise HTTPException(409, "Pendaftaran fotografer sedang diproses")
     slug = re.sub(r"[^a-z0-9]+", "-", payload.name.lower()).strip("-") + "-" + pid[-4:]
     await db.photographers.insert_one({"photographer_id": pid, "user_id": user["user_id"], "slug": slug, "name": payload.name, "username": "@" + slug.replace("-", ""), "category": payload.category, "location": "Makassar, Sulawesi Selatan", "bio": "Profil baru di Jasakamerata.", "profile_image": user.get("picture", ""), "gallery": [], "verified": False, "demo": False, "listing_status": "pending", "verification": {"status": "not_submitted"}, "rating": None, "reviews": 0, "starting_price": 0, "min_duration": 2, "service_area": "Makassar dan sekitarnya", "services": [], "created_at": now()})
-    await db.users.update_one({"user_id": user["user_id"]}, {"$set": {"role": "photographer", "photographer_id": pid, "photographer_policy_agreed_at": now()}})
     await audit(user, "photographer.onboard", pid, payload.category)
     return {"ok": True, "photographer_id": pid}
 

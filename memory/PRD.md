@@ -46,6 +46,26 @@ Membangun ulang website Jasa Kamera sebagai marketplace jasa fotografi freelance
 - Frontend dipecah menjadi pages/ components/ context/ lib/; tampilan publik tidak berubah.
 - Testing: iteration_4 backend 16/16, frontend semua alur lulus; temuan minor sudah diperbaiki.
 
+
+### 2026-10-21 — Fase 3 (Master prompt Jasakamerata, bertahap)
+- Pilihan user: Midtrans DITUNDA, login Google saja, Hostinger Web/Cloud (PHP/MySQL), tetap 4 kategori.
+- Branding Jasakamerata (title, meta, OG, favicon.svg, header/footer, auth, policy). Badge "Made with Emergent" disisipkan platform (bukan kode app).
+- Komisi 5%/95%; ledger idempoten (koleksi ledger + wallets, unique key) — earning & platform_commission sekali per pesanan selesai.
+- Pendaftaran fotografer = onboarding setelah Google login (/daftar) tanpa rekening; rekening di Studio → Rekening (terenkripsi, masked, terkunci saat penarikan berjalan, audit).
+- Portofolio upload ke Emergent Object Storage (portfolio_items, /api/media/{id}), judul/deskripsi/sampul/urutan/hapus.
+- Pesanan: pending → accepted → delivered (file privat/tautan) → revision_requested/disputed/completed; ulasan sekali per pesanan selesai; slot lock saat accept.
+- Penarikan Rp100rb–10jt: reserve atomik → admin approve → process → success (referensi wajib) / fail / reject (dana kembali).
+- Verifikasi profesional terpisah (KTP privat, cek kelengkapan otomatis, keputusan admin).
+- Admin: rifkyapriawan04@gmail.com via ADMIN_EMAILS (server-side). Tab: ringkasan, fotografer, verifikasi, pesanan, penarikan, ledger, pengguna, audit. /admin/dashboard & /photographer/dashboard alias.
+- Customer dropdown (Profil Saya/Pesanan/Chat/Favorit/Keluar); beranda maks 2 fotografer per kategori; halaman /kebijakan/*.
+- Dokumentasi pemilik: /app/docs/PANDUAN_PEMILIK.md (hosting: Web/Cloud Hostinger tidak bisa menjalankan FastAPI+MongoDB).
+- Testing iteration_5: backend 22/22 + legacy 33 pass; frontend ~95%; temuan sudah diperbaiki.
+
+## Backlog setelah Fase 3
+- P0: Hubungkan domain jasakamerata.com + uji Google SSO di produksi.
+- P1: Midtrans Snap sandbox + webhook (saat user siap), notifikasi email (Resend), reservasi slot sementara saat checkout.
+- P2: Jam kerja mingguan di kalender, moderasi portofolio, ganti window.prompt dengan dialog.
+
 ## Next backlog (setelah fase 2)
 - P1: Upload portofolio langsung (object storage), notifikasi in-app/email, ulasan setelah booking selesai.
 - P1: Payment gateway sandbox (ditunda user), refund.

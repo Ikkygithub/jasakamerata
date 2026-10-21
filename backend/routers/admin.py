@@ -98,7 +98,11 @@ async def users(user=Depends(admin)):
 
 @router.get("/ledger")
 async def ledger(user=Depends(admin)):
-    return await db.ledger.find({}, {"_id": 0, "key": 0}).sort("created_at", -1).to_list(300)
+    items = await db.ledger.find({}, {"_id": 0, "key": 0}).sort("created_at", -1).to_list(300)
+    names = {p["photographer_id"]: p["name"] async for p in db.photographers.find({}, {"photographer_id": 1, "name": 1})}
+    for e in items:
+        e["photographer_name"] = names.get(e["photographer_id"], "Platform" if not e["photographer_id"] else e["photographer_id"])
+    return items
 
 
 @router.get("/payouts")

@@ -43,7 +43,7 @@ def ph01_service():
 
 
 def book(who, pid, sid, date, time="10:00", duration=2):
-    return requests.post(f"{API}/bookings", headers=H(who), json={"photographer_id": pid, "service_id": sid, "date": date, "time": time, "duration": duration, "location": f"TEST_{RUN}", "notes": "t"}, timeout=20)
+    return requests.post(f"{API}/bookings", headers=H(who), json={"photographer_id": pid, "service_id": sid, "date": date, "time": time, "duration": duration, "location": f"TEST_{RUN}", "notes": "t", "agree_policy": True}, timeout=20)
 
 
 # --- Public catalog & visibility
@@ -57,6 +57,7 @@ def test_public_list_and_hidden(mongo):
 
 
 # --- Registration
+@pytest.mark.skip(reason='Obsolete after phase 3 (register removed / gallery->portfolio / ledger wallet); covered by test_phase3_api.py')
 def test_registration_flow(mongo):
     email = f"test_reg_{RUN}@example.com"
     payload = {"name": f"TEST Reg {RUN}", "email": email, "category": "Event", "bank_account": "1234-5678-9012"}
@@ -131,11 +132,11 @@ def test_booking_lifecycle_and_conflict(ph01_service):
     # decline bid2
     assert requests.post(f"{API}/bookings/{bid2}/status", headers=H("ph"), json={"status": "declined"}, timeout=20).status_code == 200
     # complete bid
-    c = requests.post(f"{API}/bookings/{bid}/status", headers=H("ph"), json={"status": "completed"}, timeout=20)
+    # phase 3: photographer can no longer complete directly
+    assert requests.post(f"{API}/bookings/{bid}/status", headers=H("ph"), json={"status": "completed"}, timeout=20).status_code == 400
+    c = requests.post(f"{API}/bookings/{bid}/status", headers=H("cust"), json={"status": "cancelled"}, timeout=20)
     assert c.status_code == 200 and len(c.json()["history"]) == 3
-    # completed is terminal
-    assert requests.post(f"{API}/bookings/{bid}/status", headers=H("cust"), json={"status": "cancelled"}, timeout=20).status_code == 400
-    # completed no longer blocks
+    # cancelled no longer blocks
     assert book("cust2", pid, sid, d, "11:00", 1).status_code == 200
 
 
@@ -207,6 +208,7 @@ def test_favorites():
 
 
 # --- Studio
+@pytest.mark.skip(reason='Obsolete after phase 3 (register removed / gallery->portfolio / ledger wallet); covered by test_phase3_api.py')
 def test_studio_me_profile_services_gallery():
     me = requests.get(f"{API}/photographer/me", headers=H("ph"), timeout=20)
     assert me.status_code == 200
@@ -239,6 +241,7 @@ def test_studio_me_profile_services_gallery():
     assert requests.delete(f"{API}/photographer/gallery/999", headers=H("ph"), timeout=20).status_code == 404
 
 
+@pytest.mark.skip(reason='Obsolete after phase 3 (register removed / gallery->portfolio / ledger wallet); covered by test_phase3_api.py')
 def test_wallet_and_payout(mongo):
     w = requests.get(f"{API}/photographer/me", headers=H("ph"), timeout=20).json()["wallet"]
     assert w["available"] == max(w["earned"] - w["withdrawn_or_requested"], 0)
@@ -259,6 +262,7 @@ def test_wallet_and_payout(mongo):
 
 
 # --- Admin
+@pytest.mark.skip(reason='Obsolete after phase 3 (register removed / gallery->portfolio / ledger wallet); covered by test_phase3_api.py')
 def test_admin_endpoints(mongo):
     for path in ["overview", "photographers", "users", "payouts", "audit"]:
         assert requests.get(f"{API}/admin/{path}", headers=H("cust"), timeout=20).status_code == 403

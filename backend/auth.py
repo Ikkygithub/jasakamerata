@@ -33,7 +33,7 @@ async def auth_session(payload: OAuthSession, response: Response):
     email = data["email"].lower()
     user = await db.users.find_one({"email": email}, {"_id": 0})
     if not user:
-        user = {"user_id": f"user_{uuid.uuid4().hex[:12]}", "email": email, "name": data.get("name") or "Pengguna Jasa Kamera", "picture": data.get("picture", ""), "role": "customer", "created_at": now()}
+        user = {"user_id": f"user_{uuid.uuid4().hex[:12]}", "email": email, "name": data.get("name") or "Pengguna Jasakamerata", "picture": data.get("picture", ""), "role": "customer", "created_at": now()}
         await db.users.insert_one(dict(user))
     updates = {"picture": data.get("picture", user.get("picture", ""))}
     if email in admin_emails():

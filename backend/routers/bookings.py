@@ -164,8 +164,8 @@ async def deliver(booking_id: str, note: str = Form(""), link: str = Form(""), f
         meta = await save_upload(f, f"deliveries/{booking_id}", DELIVERY_TYPES, 25)
         saved.append({"file_id": new_id("file"), **meta})
     d = {"delivery_id": new_id("dlv"), "booking_id": booking_id, "note": note[:1000], "link": link, "files": saved, "created_at": now()}
-    await db.deliveries.insert_one(dict(d))
     await set_status(b, "delivered", user, "Hasil diserahkan")
+    await db.deliveries.insert_one(dict(d))
     return {"ok": True, "delivery_id": d["delivery_id"]}
 
 

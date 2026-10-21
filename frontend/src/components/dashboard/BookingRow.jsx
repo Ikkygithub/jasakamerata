@@ -100,7 +100,7 @@ export function BookingRow({ b, role, onChange }) {
         {b.notes && <p className="note">“{b.notes}”</p>}
         <Deliveries b={b} />
         {role === "customer" && b.status === "completed" && !b.reviewed && <ReviewForm b={b} onDone={onChange} />}
-        {b.reviewed && <small className="muted">Ulasan sudah dikirim.</small>}
+        {b.reviewed && <small className="muted block">Ulasan sudah dikirim.</small>}
         <button className="link-btn" onClick={() => setOpen(!open)} data-testid={`booking-history-toggle-${b.booking_id}`}>{open ? "Sembunyikan riwayat" : "Lihat riwayat status"}</button>
         {open && <ul className="history">{b.history?.map((h, i) => <li key={i}><StatusPill status={h.status} /> oleh {h.by} · {fmtTime(h.at)}{h.note && ` — ${h.note}`}</li>)}</ul>}
       </div>

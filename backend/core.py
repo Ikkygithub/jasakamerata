@@ -28,7 +28,10 @@ def new_id(prefix):
 def public(doc):
     if not doc:
         return None
-    return {k: v for k, v in doc.items() if k not in SECRET_FIELDS}
+    out = {k: v for k, v in doc.items() if k not in SECRET_FIELDS}
+    if isinstance(out.get("bank"), dict):
+        out["bank"] = {k: v for k, v in out["bank"].items() if k != "number_encrypted"}
+    return out
 
 
 def encrypt(value: str) -> str:

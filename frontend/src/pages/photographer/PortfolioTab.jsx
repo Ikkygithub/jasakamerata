@@ -33,6 +33,7 @@ export function PortfolioTab({ reload: reloadProfile }) {
   const [meta, setMeta] = useState({ title: "", description: "" });
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState("");
+  const [inputKey, setInputKey] = useState(0);
   const load = useCallback(() => api.get("/photographer/portfolio").then(setItems).catch(() => setItems([])), []);
   useEffect(() => { load(); }, [load]);
   const reload = () => { load(); reloadProfile(); };
@@ -52,7 +53,7 @@ export function PortfolioTab({ reload: reloadProfile }) {
     fd.append("title", meta.title);
     fd.append("description", meta.description);
     setBusy(true);
-    try { await api.upload("/photographer/portfolio", fd); toast("Foto diunggah"); pick(null); setMeta({ title: "", description: "" }); reload(); } catch (err) { toast(err.message); } finally { setBusy(false); }
+    try { await api.upload("/photographer/portfolio", fd); toast("Foto diunggah"); pick(null); setInputKey((k) => k + 1); setMeta({ title: "", description: "" }); reload(); } catch (err) { toast(err.message); } finally { setBusy(false); }
   };
   const move = async (i, dir) => {
     const ids = items.map((x) => x.item_id);
@@ -65,7 +66,7 @@ export function PortfolioTab({ reload: reloadProfile }) {
       <form className="panel-form upload-form" onSubmit={upload} data-testid="portfolio-upload-form">
         <div className="upload-drop">{preview ? <img src={preview} alt="Pratinjau" data-testid="portfolio-preview" /> : <Upload size={22} />}</div>
         <div className="upload-fields">
-          <label>Foto (JPG/PNG/WEBP, maks 8 MB)<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => pick(e.target.files[0])} data-testid="portfolio-file-input" /></label>
+          <label>Foto (JPG/PNG/WEBP, maks 8 MB)<input key={inputKey} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => pick(e.target.files[0])} data-testid="portfolio-file-input" /></label>
           <div className="two-col"><label>Judul<input value={meta.title} onChange={(e) => setMeta({ ...meta, title: e.target.value })} data-testid="portfolio-title-input" /></label><label>Deskripsi<input value={meta.description} onChange={(e) => setMeta({ ...meta, description: e.target.value })} data-testid="portfolio-desc-input" /></label></div>
           <button className="olive-btn" disabled={busy || !file} data-testid="portfolio-upload-button"><Plus size={15} /> {busy ? "Mengunggah..." : "Unggah foto"}</button>
         </div>

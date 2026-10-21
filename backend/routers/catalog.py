@@ -39,7 +39,7 @@ async def list_photographers(category: Optional[str] = None, search: Optional[st
 async def featured():
     result = []
     for c in CATEGORIES:
-        docs = await db.photographers.find({**VISIBLE, "category": c}, {"_id": 0}).sort([("verified", -1), ("rating", -1)]).to_list(2)
+        docs = await db.photographers.find({**VISIBLE, "category": c, "starting_price": {"$gt": 0}, "gallery.0": {"$exists": True}}, {"_id": 0, "user_id": 0}).sort([("verified", -1), ("rating", -1)]).to_list(2)
         result.extend(docs)
     return result
 
