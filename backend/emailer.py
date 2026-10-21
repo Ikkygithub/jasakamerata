@@ -130,14 +130,22 @@ def _template(greeting, lines, cta_path, cta_label):
             f'Kami tidak pernah meminta kata sandi, kode, atau data kartu melalui email.</p></td></tr></table></td></tr></table>')
 
 
+_tasks = set()
+
+
 async def _deliver(kind, ref, to, subject, html):
-    status, detail = await send_email(to=to, subject=subject, html=html)
+    try:
+        status, detail = await send_email(to=to, subject=subject, html=html)
+    except ValueError as e:
+        status, detail = "blocked", str(e)[:200]
     await db.email_logs.insert_one({"log_id": new_id("eml"), "kind": kind, "ref": ref, "to": to, "subject": subject, "status": status, "detail": detail, "created_at": now()})
 
 
 def queue(kind, ref, to, subject, html):
     if to:
-        asyncio.create_task(_deliver(kind, ref, to, subject, html))
+        task = asyncio.create_task(_deliver(kind, ref, to, subject, html))
+        _tasks.add(task)
+        task.add_done_callback(_tasks.discard)
 
 
 async def photographer_email(photographer_id):

@@ -113,7 +113,10 @@ async def apply_status(order_id, status_code, gross, status, fraud, transaction_
     bid = payment["booking_id"]
     entry = lambda note: {"status": "payment", "by": "midtrans", "note": note, "at": now()}  # noqa: E731
     if status in SUCCESS:
-        res = await db.bookings.update_one({"booking_id": bid, "payment_status": {"$ne": "paid"}}, {"$set": {"payment_status": "paid", "payment_order_id": order_id, "paid_at": now()}, "$push": {"history": entry("Pembayaran terverifikasi Midtrans")}})
+        late = await db.bookings.update_one({"booking_id": bid, "status": {"$ne": "accepted"}, "payment_status": {"$nin": ["paid", "refund_pending"]}}, {"$set": {"payment_status": "refund_pending", "payment_order_id": order_id, "paid_at": now()}, "$push": {"history": entry("Pembayaran diterima setelah pesanan batal — perlu refund manual oleh admin")}})
+        if late.modified_count:
+            return "refund_pending"
+        res = await db.bookings.update_one({"booking_id": bid, "status": "accepted", "payment_status": {"$ne": "paid"}}, {"$set": {"payment_status": "paid", "payment_order_id": order_id, "paid_at": now()}, "$push": {"history": entry("Pembayaran terverifikasi Midtrans")}})
         if res.modified_count:
             b = await db.bookings.find_one({"booking_id": bid}, {"_id": 0})
             await notify_paid(b)

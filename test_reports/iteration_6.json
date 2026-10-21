@@ -1,0 +1,35 @@
+{
+  "summary": "Iteration 6 (Midtrans demo-mode gating, email logs, lazy expiry, payment gating, admin integrations, SEO). Backend: new test_phase4_payments_email.py (11 tests) + in-process test_payments_webhook_unit.py (9 tests, fake Midtrans keys set only inside the pytest process) all pass; full regression suite 44 passed / 5 obsolete skipped. Verified: /payments/config enabled:false, client_key '', is_production true; snap/check/notification return 503; new booking payment_status demo_deferred; demo flow accept->deliver->complete credits exactly 2 ledger entries; email_logs booking_new (naya.test@example.com) and booking_delivered (customer.test@example.com) with status disabled and detail 'EMERGENT_EMAIL_KEY belum tersedia', responses fast; lazy expiry -> cancelled/expired with history by system; deliver on unpaid -> 400 'setelah pembayaran', on paid -> 200; customer/photographer cancel paid -> 400, admin cancel -> refund_pending; admin overview payments+email_enabled false; /admin/emails list, 403 for non-admin. Webhook unit: bad signature 401, missing fields 400, unknown order 404, amount mismatch 400 (booking unchanged), capture with fraud=challenge 400, pending->settlement->paid, duplicate notification 'duplicate' (one history entry), stale pending after settlement ignored, booking_paid email logged disabled, cancel after settlement -> reversed. Frontend (Playwright): /customer/pesanan payment labels, Bayar sekarang visible for accepted+unpaid with due time, click -> toast 'Pembayaran online belum diaktifkan'; photographer row hides Serahkan hasil and shows waiting text; /admin integrations notice; /admin/email table renders 20 rows; policy page mentions Midtrans, 24 jam, escrow. SEO: robots.txt & sitemap.xml 200 with jasakamerata.com URLs. canonical/og:url were MISSING from served HTML until I restarted the frontend (CRA dev server caches public/index.html); after restart present.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "apply_status (payments.py) settlement branch", "issue": "Settlement is applied to booking regardless of booking.status. If customer cancels an unpaid booking (allowed) or it lazily expires after Snap was opened, a late settlement makes booking status=cancelled + payment_status=paid with no refund_pending flag -> money received but order cancelled silently. Suggest: if booking.status != 'accepted' on success, set payment_status='refund_pending' (or paid_after_cancel) + history/audit for admin."},
+      {"endpoint": "emailer.queue", "issue": "asyncio.create_task result not referenced; per Python docs tasks may be GC'd mid-flight. Keep a module-level set of tasks and discard on done."},
+      {"endpoint": "emailer._assert_safe_email", "issue": "Raises ValueError inside the background task before logging; user-provided text (location/customer name containing e.g. 'cvv' or a domain-like string) would cause silent drop with no email_logs entry. Catch and log status 'blocked'."},
+      {"endpoint": "expire_overdue", "issue": "Bookings stuck in payment_status 'pending' (VA created, no final webhook received) are never expired; relies entirely on Midtrans expire webhook/check."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "SEO index.html", "issue": "canonical/og:url added to public/index.html were not served until frontend restart (dev server caching). Fixed by restart; production build will include them.", "affected_selectors": ["link[rel=canonical]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_phase4_payments_email.py", "/app/backend/tests/test_payments_webhook_unit.py", "/app/tests/seed_ui_unpaid.py", "/app/test_reports/pytest/pytest_results_iter6.xml"],
+  "action_items": [
+    "Handle late Midtrans settlement for cancelled/expired bookings (flag refund_pending + audit)",
+    "Keep references to fire-and-forget email tasks; log blocked emails instead of raising silently"
+  ],
+  "critical_code_review_comments": [
+    "payments.apply_status: settlement on non-accepted booking leads to cancelled+paid with no refund flag",
+    "emailer.queue: unreferenced asyncio tasks; safety-check ValueError not logged to email_logs",
+    "Payment window (24h) may extend past the session date for short-notice bookings; consider min(due, session start)"
+  ],
+  "updated_files": ["/app/backend/tests/test_phase4_payments_email.py", "/app/backend/tests/test_payments_webhook_unit.py", "/app/tests/seed_ui_unpaid.py"],
+  "success_rate": {"backend": "100% (64 passed incl. 9 unit, 5 obsolete skipped)", "frontend": "100%"},
+  "seed_data_creation": "Temporary bookings (TEST P4 *, JK-T*, JK-TESTEXP*, JK-TWH*, JK-TESTUIPAY) cleaned up after tests. email_logs entries from tests remain (expected log history).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && REACT_APP_BACKEND_URL=https://foto-makassar.preview.emergentagent.com python -m pytest tests/ -n 0. test_payments_webhook_unit.py imports server in-process and sets FAKE MIDTRANS keys in os.environ only for that process (TestClient); it writes to the real DB and cleans up. UI seed: python3 /app/tests/seed_ui_unpaid.py [clean]. Keys in backend/.env are empty (demo). Admin email tab: dash-tab-email -> admin-emails-table."
+}

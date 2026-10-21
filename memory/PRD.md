@@ -61,6 +61,13 @@ Membangun ulang website Jasa Kamera sebagai marketplace jasa fotografi freelance
 - Dokumentasi pemilik: /app/docs/PANDUAN_PEMILIK.md (hosting: Web/Cloud Hostinger tidak bisa menjalankan FastAPI+MongoDB).
 - Testing iteration_5: backend 22/22 + legacy 33 pass; frontend ~95%; temuan sudah diperbaiki.
 
+### 2026-10-21 — Fase 4 (Email, Midtrans, SEO)
+- emailer.py (Resend via Emergent proxy, fire-and-forget, db.email_logs; EMERGENT_EMAIL_KEY kosong → status disabled).
+- routers/payments.py: Snap (bayar setelah accepted, jendela 24 jam), webhook SHA512 + cek nominal + idempoten (payment_events), status API check, late settlement → refund_pending. Kunci kosong → DEMO.
+- Lazy expire pesanan tak dibayar; deliver hanya jika paid/demo; cancel paid hanya admin → refund_pending.
+- Admin: status integrasi + tab Email. SEO: canonical, og:url, robots.txt, sitemap.xml.
+- Testing iteration_6: backend 100%, frontend 100%; minor fixes applied.
+
 ## Backlog setelah Fase 3
 - P0: Hubungkan domain jasakamerata.com + uji Google SSO di produksi.
 - P1: Midtrans Snap sandbox + webhook (saat user siap), notifikasi email (Resend), reservasi slot sementara saat checkout.

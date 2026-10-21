@@ -10,7 +10,8 @@ Versi: 21 Oktober 2026. Ditulis berdasarkan kode yang benar-benar ada di proyek 
 | Database | MongoDB | Koleksi: users, photographers, bookings, conversations, messages, favorites, portfolio_items, deliveries, reviews, verifications, ledger, wallets, payouts, availability_blocks, audit_logs |
 | Penyimpanan file | Emergent Object Storage | Foto portofolio (publik), file hasil & dokumen KTP (privat). File tidak hilang saat redeploy |
 | Login | Google (dikelola Emergent) | Tanpa kata sandi aplikasi |
-| Pembayaran | **Belum aktif (DITUNDA)** | Pesanan berstatus pembayaran DEMO, tidak menagih dana |
+| Pembayaran | Midtrans Snap (kode siap, **aktif setelah kunci diisi**) | Tanpa kunci → mode DEMO |
+| Email notifikasi | Resend via Emergent (kode siap, **aktif setelah EMERGENT_EMAIL_KEY tersedia**) | Setiap percobaan tercatat di Admin → Email |
 
 ## 2. Kecocokan dengan Hostinger Web/Cloud Hosting (status: DIANALISIS dari source code, belum diuji di Hostinger)
 Paket Web/Cloud Hosting Hostinger (Premium, Business, Cloud) hanya menjalankan PHP + MySQL. Aplikasi ini butuh:
@@ -46,6 +47,25 @@ Kesimpulan: backend + database **tidak dapat** dijalankan di paket Web/Cloud Hos
 - **Penarikan saldo** (Rp100.000–Rp10.000.000): Admin → Penarikan → Setujui → Mulai transfer → tampilkan nomor rekening lengkap → transfer manual lewat bank Anda → klik *Transfer berhasil* dan isi nomor referensi. Jika gagal atau ditolak, dana otomatis kembali ke saldo fotografer.
 - **Sengketa:** Admin → Pesanan → filter "Dalam sengketa" → selesaikan atau batalkan.
 
+## 5b. Mengaktifkan Midtrans PRODUCTION
+1. Login ke dashboard Midtrans (mode **Production**) → **Settings → Access Keys**. Salin Server Key dan Client Key.
+2. Buka file `backend/.env` di proyek (atau menu Secrets/Environment pada deployment Emergent). Isi sendiri, jangan kirim lewat chat:
+   `MIDTRANS_SERVER_KEY="..."`, `MIDTRANS_CLIENT_KEY="..."`, `MIDTRANS_IS_PRODUCTION="true"`. Restart backend atau deploy ulang.
+3. Midtrans → **Settings → Configuration → Payment Notification URL**: `https://jasakamerata.com/api/payments/midtrans/notification`.
+   **Perhatian:** akun merchant Anda juga dipakai website lain. Satu akun Midtrans hanya punya satu Notification URL. Mengubahnya akan memutus notifikasi ke website lama. Tanyakan dulu ke Midtrans apakah akun boleh dipakai untuk domain kedua, atau minta akun/merchant terpisah. Jangan ubah URL ini tanpa memastikan hal tersebut.
+4. Finish Redirect URL: `https://jasakamerata.com/customer/pesanan`.
+5. Uji dengan satu transaksi bernilai kecil. Pastikan status pesanan berubah menjadi "Lunas · terverifikasi Midtrans" dan Admin → Audit menampilkan `payment.settlement`.
+6. Alur: customer membayar setelah fotografer menerima pesanan (batas 24 jam). Lewat dari itu, pesanan otomatis batal. Status lunas hanya dari notifikasi Midtrans yang tanda tangannya valid dan nominalnya cocok. Refund dilakukan manual oleh admin (status "Refund diproses manual").
+
+## 5c. Email notifikasi
+- Email terkirim ke fotografer saat ada pesanan baru atau pembayaran terverifikasi, dan ke customer saat hasil diserahkan. Balasan email diarahkan ke rifkyapriawan04@gmail.com.
+- Saat ini `EMERGENT_EMAIL_KEY` di `backend/.env` masih kosong, sehingga email **belum terkirim**. Status ini tercatat jujur sebagai "disabled" di Admin → Email.
+
+## 5d. Kata "emergent" di link
+- Alamat `*.emergentagent.com` / `*.emergent.host` adalah alamat bawaan platform dan tidak bisa diganti. Hubungkan domain jasakamerata.com (bagian 3) agar link dan hasil pencarian memakai domain Anda.
+- Sudah disiapkan: canonical dan og:url ke https://jasakamerata.com, `robots.txt`, dan `sitemap.xml`. Setelah domain aktif, daftarkan sitemap di Google Search Console.
+- Halaman login Google tetap melewati `auth.emergentagent.com`, karena layanan login dikelola Emergent.
+
 ## 6. Backup dan log
 - Database: di Emergent, gunakan fitur backup atau ekspor yang tersedia pada deployment. Untuk server sendiri: `mongodump --uri "$MONGO_URL" --db <DB_NAME> --out backup-YYYYMMDD`, lalu pulihkan dengan `mongorestore`.
 - File tersimpan di object storage dan terhubung lewat koleksi `portfolio_items`, `deliveries`, dan `verifications`. Jangan hapus koleksi ini.
@@ -55,8 +75,8 @@ Kesimpulan: backend + database **tidak dapat** dijalankan di paket Web/Cloud Hos
 ## 7. Yang masih harus diselesaikan
 | Hal | Status | Langkah |
 |---|---|---|
-| Pembayaran Midtrans | DITUNDA atas permintaan Anda | Saat siap: buat Server Key & Client Key **sandbox**, masukkan sendiri ke backend/.env (jangan dikirim lewat chat), lalu minta integrasi |
+| Pembayaran Midtrans | Kode siap, kunci kosong | Ikuti bagian 5b |
+| Email notifikasi | Kode siap, kunci email belum tersedia | Bagian 5c |
 | Login email + kata sandi, verifikasi email | Tidak dibuat (Anda memilih Google saja) | Email sudah diverifikasi oleh Google |
 | Domain produksi + uji Google SSO di domain | Menunggu langkah 3 | Ikuti langkah 3, lalu uji login |
 | Badge "Made with Emergent" di pojok halaman | Disisipkan platform, bukan kode aplikasi | Hubungi dukungan Emergent untuk opsi menghilangkan badge |
-| Notifikasi email | Belum ada | Indikator di aplikasi tersedia (badge chat/pesanan) |
