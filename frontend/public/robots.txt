@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /customer/
+Disallow: /studio
+Disallow: /admin
+Sitemap: https://jasakamerata.com/sitemap.xml

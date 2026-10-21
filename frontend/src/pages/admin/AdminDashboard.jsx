@@ -18,6 +18,7 @@ function Overview({ o }) {
       </div>
       <h3 className="list-title">Pesanan per status · nilai pesanan selesai {money(o.completed_value)}</h3>
       <div className="stats four">{Object.entries(o.bookings).map(([s, n]) => <Stat key={s} label={STATUS[s]} value={n} testid={`admin-bookings-${s}`} />)}</div>
+      <div className="notice" data-testid="admin-integrations-status">Pembayaran Midtrans: {o.payments.enabled ? `AKTIF (${o.payments.production ? "production" : "sandbox"}) · ${o.payments.paid} lunas · ${o.payments.refund_pending} refund manual` : "BELUM AKTIF (kunci kosong, mode DEMO)"} · Email notifikasi: {o.email_enabled ? "AKTIF" : "BELUM AKTIF (kunci email belum tersedia)"}</div>
       <div className="dash-cards">
         <Link to="/admin/penarikan" className="dash-card" data-testid="admin-overview-payouts">{o.payouts_open} penarikan perlu tindakan →</Link>
         <Link to="/admin/verifikasi" className="dash-card" data-testid="admin-overview-verifications">{o.pending_verification} pengajuan verifikasi →</Link>
@@ -139,6 +140,13 @@ function Ledger() {
   return <table className="data-table" data-testid="admin-ledger-table"><thead><tr><th>Waktu</th><th>Jenis</th><th>Fotografer</th><th>Referensi</th><th>Nominal</th></tr></thead><tbody>{items.map((e) => <tr key={e.entry_id}><td>{fmtTime(e.created_at)}</td><td>{LEDGER_TYPES[e.type] || e.type}</td><td>{e.photographer_name}</td><td>{e.ref}</td><td>{money(e.amount)}</td></tr>)}</tbody></table>;
 }
 
+function Emails() {
+  const [items, setItems] = useState([]);
+  useEffect(() => { api.get("/admin/emails").then(setItems).catch(() => {}); }, []);
+  if (!items.length) return <div className="empty"><p>Belum ada email yang diproses.</p></div>;
+  return <table className="data-table" data-testid="admin-emails-table"><thead><tr><th>Waktu</th><th>Jenis</th><th>Penerima</th><th>Subjek</th><th>Status</th></tr></thead><tbody>{items.map((e) => <tr key={e.log_id}><td>{fmtTime(e.created_at)}</td><td>{e.kind}</td><td>{e.to}</td><td>{e.subject}</td><td>{e.status}{e.status !== "sent" && ` (${e.detail})`}</td></tr>)}</tbody></table>;
+}
+
 function Users() {
   const [items, setItems] = useState([]);
   useEffect(() => { api.get("/admin/users").then(setItems).catch(() => {}); }, []);
@@ -157,7 +165,7 @@ export default function AdminDashboard() {
   const tab = params.tab && params.tab !== "dashboard" ? params.tab : "ringkasan";
   const [o, setO] = useState(null);
   useEffect(() => { api.get("/admin/overview").then(setO).catch(() => {}); }, [tab]);
-  const tabs = [["ringkasan", "Ringkasan"], ["fotografer", "Fotografer", o?.pending_listing], ["verifikasi", "Verifikasi", o?.pending_verification], ["pesanan", "Pesanan", o?.bookings?.disputed], ["penarikan", "Penarikan", o?.payouts_open], ["ledger", "Komisi & Ledger"], ["pengguna", "Pengguna"], ["audit", "Audit log"]].map(([key, label, badge]) => ({ key, label, badge, to: key === "ringkasan" ? "/admin" : `/admin/${key}` }));
+  const tabs = [["ringkasan", "Ringkasan"], ["fotografer", "Fotografer", o?.pending_listing], ["verifikasi", "Verifikasi", o?.pending_verification], ["pesanan", "Pesanan", o?.bookings?.disputed], ["penarikan", "Penarikan", o?.payouts_open], ["ledger", "Komisi & Ledger"], ["pengguna", "Pengguna"], ["email", "Email"], ["audit", "Audit log"]].map(([key, label, badge]) => ({ key, label, badge, to: key === "ringkasan" ? "/admin" : `/admin/${key}` }));
   return (
     <DashShell eyebrow="PANEL ADMIN" title="Operasional Jasakamerata." subtitle="Verifikasi fotografer, pantau pesanan & sengketa, dan proses penarikan saldo." tabs={tabs} active={tab}>
       {tab === "ringkasan" && (o ? <Overview o={o} /> : <p className="muted">Memuat...</p>)}
@@ -167,6 +175,7 @@ export default function AdminDashboard() {
       {tab === "penarikan" && <Payouts />}
       {tab === "ledger" && <Ledger />}
       {tab === "pengguna" && <Users />}
+      {tab === "email" && <Emails />}
       {tab === "audit" && <Audit />}
     </DashShell>
   );

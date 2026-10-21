@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from datetime import date as Date
+from datetime import date as Date, datetime, timezone
 import re
 from core import db
 
@@ -32,7 +32,14 @@ def overlaps(start_a, end_a, start_b, end_b):
     return start_a < end_b and start_b < end_a
 
 
+async def expire_overdue():
+    cutoff = datetime.now(timezone.utc).isoformat()
+    entry = {"status": "cancelled", "by": "system", "note": "Batas waktu pembayaran 24 jam terlewati", "at": cutoff}
+    await db.bookings.update_many({"status": "accepted", "payment_status": {"$in": ["unpaid", "failed"]}, "payment_due_at": {"$lt": cutoff}}, {"$set": {"status": "cancelled", "payment_status": "expired"}, "$push": {"history": entry}})
+
+
 async def conflicts(photographer_id, date, time, duration, ignore_booking=None):
+    await expire_overdue()
     validate_date(date)
     start = to_minutes(time)
     end = start + duration * 60

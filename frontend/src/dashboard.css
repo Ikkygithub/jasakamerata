@@ -136,3 +136,4 @@ b.neg{color:#9b4b3f}b.pos{color:var(--olive-dark)}
 @media(max-width:900px){.photographer-grid.two,.pf-grid{grid-template-columns:repeat(2,1fr)}.policy-page{grid-template-columns:1fr;gap:20px}.policy-nav{position:static;flex-direction:row;overflow-x:auto}.upload-form{grid-template-columns:1fr}.user-name{display:none}}
 @media(max-width:600px){.photographer-grid.two{grid-template-columns:1fr}}
 .block{display:block;margin-top:6px}
+.pay-paid{background:#e4ede0!important;color:var(--olive-dark)}.pay-unpaid,.pay-pending{background:#f5eeda!important;color:#7a6326}.pay-failed,.pay-expired,.pay-reversed,.pay-refund_pending{background:#f3e3e0!important;color:#9b4b3f}

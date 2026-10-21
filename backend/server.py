@@ -5,12 +5,12 @@ from core import client
 from seed import seed_data
 from storage import init_storage
 import auth
-from routers import catalog, bookings, chat, customer, photographer, admin
+from routers import catalog, bookings, chat, customer, photographer, admin, payments
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI(title="Jasakamerata API")
 api = APIRouter(prefix="/api")
-for r in [catalog.router, auth.router, bookings.router, chat.router, customer.router, photographer.router, admin.router]:
+for r in [catalog.router, auth.router, bookings.router, chat.router, customer.router, photographer.router, admin.router, payments.router]:
     api.include_router(r)
 app.include_router(api)
 
@@ -22,6 +22,7 @@ app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=[] if "
 async def startup():
     await seed_data()
     init_storage()
+    await payments.init_indexes()
 
 
 @app.on_event("shutdown")

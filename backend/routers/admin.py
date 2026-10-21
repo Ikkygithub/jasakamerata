@@ -5,6 +5,8 @@ from auth import require_role
 from core import audit, cipher, db, now
 from ledger import release_payout
 from storage import load
+from routers import payments
+import os
 
 router = APIRouter(prefix="/admin")
 admin = require_role("admin")
@@ -36,7 +38,14 @@ async def overview(user=Depends(admin)):
         "completed_value": gmv,
         "commission": commission,
         "payouts_open": await db.payouts.count_documents({"status": {"$in": ["requested", "approved", "processing"]}}),
+        "payments": {"enabled": payments.enabled(), "production": payments.is_production(), "paid": await db.bookings.count_documents({"payment_status": "paid"}), "refund_pending": await db.bookings.count_documents({"payment_status": "refund_pending"})},
+        "email_enabled": bool(os.environ.get("EMERGENT_EMAIL_KEY", "").strip()),
     }
+
+
+@router.get("/emails")
+async def email_logs(user=Depends(admin)):
+    return await db.email_logs.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
 
 
 @router.get("/photographers")

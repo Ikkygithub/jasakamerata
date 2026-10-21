@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { api, money, fmtDate, fmtTime, STATUS, downloadFile } from "@/lib/api";
+import { payBooking } from "@/lib/payments";
+
+const PAY_LABEL = { demo_deferred: "Pembayaran: DEMO (belum aktif)", unpaid: "Menunggu pembayaran", pending: "Pembayaran sedang diproses", paid: "Lunas · terverifikasi Midtrans", failed: "Pembayaran gagal — coba lagi", expired: "Batas bayar terlewati", refund_pending: "Refund diproses manual", reversed: "Pembayaran dibatalkan Midtrans" };
 
 const ACTIONS = {
   photographer: { pending: [["accepted", "Terima"], ["declined", "Tolak"]], accepted: [["deliver", "Serahkan hasil"], ["cancelled", "Batalkan"]], revision_requested: [["deliver", "Kirim revisi"]] },
@@ -89,11 +92,13 @@ export function BookingRow({ b, role, onChange }) {
     setBusy(true);
     try { await api.post(`/bookings/${b.booking_id}/status`, { status, note }); toast(`Pesanan: ${STATUS[status]}`); onChange?.(); } catch (e) { toast(e.message); } finally { setBusy(false); }
   };
-  const actions = ACTIONS[role]?.[b.status] || [];
+  const actions = (ACTIONS[role]?.[b.status] || []).filter(([s]) => s !== "deliver" || ["paid", "demo_deferred"].includes(b.payment_status));
+  const canPay = role === "customer" && b.status === "accepted" && ["unpaid", "failed"].includes(b.payment_status);
+  const pay = async () => { setBusy(true); try { await payBooking(b.booking_id, () => { setBusy(false); onChange?.(); }); } catch (e) { toast(e.message); setBusy(false); } };
   return (
     <div className="order" data-testid={`booking-row-${b.booking_id}`}>
       <div className="order-main">
-        <div className="order-top"><StatusPill status={b.status} /><small>{b.booking_id}</small><small className="demo-pay">Pembayaran: DEMO (belum aktif)</small></div>
+        <div className="order-top"><StatusPill status={b.status} /><small>{b.booking_id}</small><small className={`demo-pay pay-${b.payment_status}`} data-testid={`payment-status-${b.booking_id}`}>{PAY_LABEL[b.payment_status] || b.payment_status}</small></div>
         <h3>{b.service}</h3>
         <p>{role === "customer" ? <Link to={`/fotografer/${b.photographer_slug}`}>{b.photographer_name}</Link> : `Customer: ${b.customer_name || "-"}`}{role === "admin" && ` · ${b.photographer_name}`}</p>
         <p>{fmtDate(b.date)} · {b.time} · {b.duration} jam · {b.location}</p>
@@ -107,7 +112,9 @@ export function BookingRow({ b, role, onChange }) {
       <div className="order-side">
         <b>{money(b.total)}</b>
         {role !== "customer" && <small>Komisi 5%: {money(b.commission)} · Fotografer 95%: {money(b.photographer_earning)}</small>}
-        <div className="order-actions">{actions.map(([s, label]) => <button key={s} disabled={busy} className={PRIMARY.includes(s) ? "olive-btn" : "outline-btn"} onClick={() => act(s)} data-testid={`booking-action-${s}-${b.booking_id}`}>{label}</button>)}</div>
+        {canPay && b.payment_due_at && <small data-testid={`payment-due-${b.booking_id}`}>Bayar sebelum {fmtTime(b.payment_due_at)}</small>}
+        {role === "photographer" && b.status === "accepted" && !["paid", "demo_deferred"].includes(b.payment_status) && <small>Menunggu pembayaran customer sebelum hasil dapat diserahkan</small>}
+        <div className="order-actions">{canPay && <button className="olive-btn" disabled={busy} onClick={pay} data-testid={`booking-pay-${b.booking_id}`}>Bayar sekarang</button>}{actions.map(([s, label]) => <button key={s} disabled={busy} className={PRIMARY.includes(s) ? "olive-btn" : "outline-btn"} onClick={() => act(s)} data-testid={`booking-action-${s}-${b.booking_id}`}>{label}</button>)}</div>
       </div>
       {deliver && <DeliverForm b={b} close={() => setDeliver(false)} onDone={onChange} />}
     </div>

@@ -14,7 +14,8 @@ const POLICIES = {
     ["Akses data", "Customer dan fotografer hanya dapat melihat pesanan dan percakapan miliknya sendiri."],
   ]],
   "pembayaran-komisi": ["Pembayaran & Komisi", [
-    ["Status pembayaran saat ini", "Pembayaran online BELUM aktif. Pesanan saat ini berstatus pembayaran DEMO dan tidak menagih dana apa pun. Jasakamerata tidak menyediakan escrow maupun split payment otomatis."],
+    ["Cara pembayaran", "Customer membayar melalui Midtrans setelah fotografer menerima pesanan, paling lambat 24 jam. Jika tidak dibayar, pesanan otomatis batal dan jadwal dilepas. Status Lunas hanya diberikan berdasarkan notifikasi Midtrans yang terverifikasi, bukan dari halaman browser. Selama pembayaran online belum diaktifkan, pesanan berjalan dalam mode DEMO tanpa tagihan."],
+    ["Aliran dana", "Pembayaran customer diterima oleh merchant Jasakamerata. Jasakamerata tidak menyediakan escrow maupun split payment otomatis. Bagian fotografer (95%) dicatat di saldo dan dicairkan melalui penarikan yang diproses admin."],
     ["Komisi", "Komisi platform adalah 5% dari nilai jasa pesanan yang selesai. Fotografer menerima 95%. Contoh: jasa Rp500.000 → komisi Rp25.000, bagian fotografer Rp475.000. Tidak ada potongan tersembunyi."],
     ["Kapan pendapatan tercatat", "Pendapatan fotografer masuk ke saldo yang dapat ditarik setelah customer menyetujui hasil (pesanan Selesai). Pesanan yang masih berjalan atau dalam sengketa tercatat sebagai saldo tertunda."],
   ]],
@@ -22,7 +23,7 @@ const POLICIES = {
     ["Pembatalan", "Customer dapat membatalkan pesanan yang belum menerima hasil. Fotografer dapat menolak permintaan atau membatalkan pesanan yang dikonfirmasi dengan alasan."],
     ["Penyerahan hasil & revisi", "Fotografer menyerahkan hasil melalui platform (file atau tautan galeri). Customer dapat menyetujui hasil, meminta revisi sesuai paket, atau mengajukan keberatan. Tidak ada penyelesaian otomatis tersembunyi."],
     ["Sengketa", "Pesanan dalam sengketa ditinjau admin. Pendapatan terkait ditahan sampai keputusan admin."],
-    ["Refund", "Karena pembayaran online belum aktif, belum ada proses refund dana. Kebijakan refund akan diperbarui saat pembayaran diaktifkan."],
+    ["Refund", "Pesanan yang sudah dibayar hanya dapat dibatalkan oleh admin. Refund diproses manual oleh admin ke customer dan tidak instan; statusnya tercatat di pesanan."],
   ]],
   "penarikan-saldo": ["Penarikan Saldo Fotografer", [
     ["Batas", "Minimum Rp100.000 dan maksimum Rp10.000.000 per permintaan, tidak melebihi saldo yang dapat ditarik."],

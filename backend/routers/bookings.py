@@ -8,8 +8,10 @@ from pymongo.errors import DuplicateKeyError
 from auth import current_user
 from core import COMMISSION_RATE, HIDDEN_LISTING, audit, db, new_id, now, public
 from ledger import credit_completed_booking
-from routers.availability import conflicts
+from routers.availability import conflicts, expire_overdue
 from storage import DELIVERY_TYPES, load, save_upload
+from emailer import notify_delivered, notify_new_booking
+from routers import payments
 
 router = APIRouter()
 TRANSITIONS = {
@@ -69,10 +71,11 @@ async def create_booking(payload: BookingCreate, user=Depends(current_user)):
         "customer_id": user["user_id"], "customer_name": user.get("name", ""), "photographer_id": p["photographer_id"], "photographer_name": p["name"], "photographer_slug": p["slug"],
         "service_id": service["service_id"], "service": service["title"], "category": p["category"], "date": payload.date, "time": payload.time, "duration": payload.duration,
         "location": payload.location, "notes": payload.notes, "total": total, "commission": commission, "photographer_earning": total - commission, "commission_rate": COMMISSION_RATE,
-        "status": "pending", "payment_status": "demo_deferred", "policy_agreed_at": now(), "policy_version": "2026-10",
+        "status": "pending", "payment_status": "unpaid" if payments.enabled() else "demo_deferred", "policy_agreed_at": now(), "policy_version": "2026-10",
         "history": [{"status": "pending", "by": "customer", "note": "Permintaan dibuat", "at": now()}], "created_at": now(),
     }
     await db.bookings.insert_one(dict(booking))
+    await notify_new_booking(booking)
     return public(booking)
 
 
@@ -95,7 +98,12 @@ async def load_booking(booking_id, user):
 async def set_status(b, status, user, note=""):
     role = user.get("role", "customer")
     entry = {"status": status, "by": role, "note": note, "at": now()}
-    res = await db.bookings.update_one({"booking_id": b["booking_id"], "status": b["status"]}, {"$set": {"status": status, "updated_at": now()}, "$push": {"history": entry}})
+    sets = {"status": status, "updated_at": now()}
+    if status == "accepted" and b.get("payment_status") in ("unpaid", "failed"):
+        sets["payment_due_at"] = payments.due_at()
+    if status == "cancelled" and b.get("payment_status") == "paid":
+        sets["payment_status"] = "refund_pending"
+    res = await db.bookings.update_one({"booking_id": b["booking_id"], "status": b["status"]}, {"$set": sets, "$push": {"history": entry}})
     if not res.modified_count:
         raise HTTPException(409, "Status pesanan sudah berubah, muat ulang halaman")
     await audit(user, f"booking.{status}", b["booking_id"], note)
@@ -105,6 +113,7 @@ async def set_status(b, status, user, note=""):
 
 @router.get("/bookings")
 async def my_bookings(status: str = "", user=Depends(current_user)):
+    await expire_overdue()
     q = role_filter(user)
     if status:
         q["status"] = status
@@ -126,6 +135,8 @@ async def update_status(booking_id: str, payload: StatusUpdate, user=Depends(cur
     b = await load_booking(booking_id, user)
     if payload.status not in TRANSITIONS.get(role, {}).get(b["status"], []):
         raise HTTPException(400, f"Status tidak dapat diubah dari {b['status']} ke {payload.status}")
+    if payload.status == "cancelled" and role != "admin" and b.get("payment_status") in ("paid", "pending"):
+        raise HTTPException(400, "Pesanan yang sudah dibayar tidak dapat dibatalkan sendiri. Hubungi admin untuk pembatalan dan refund.")
     if payload.status in ("revision_requested", "disputed") and len(payload.note.strip()) < 5:
         raise HTTPException(400, "Jelaskan alasan revisi atau keberatan (minimal 5 karakter)")
     if payload.status != "accepted":
@@ -152,6 +163,8 @@ async def deliver(booking_id: str, note: str = Form(""), link: str = Form(""), f
     b = await load_booking(booking_id, user)
     if b["status"] not in ("accepted", "revision_requested"):
         raise HTTPException(400, "Hasil hanya dapat diserahkan untuk pesanan yang dikonfirmasi atau diminta revisi")
+    if b.get("payment_status") not in ("paid", "demo_deferred"):
+        raise HTTPException(400, "Hasil dapat diserahkan setelah pembayaran customer terverifikasi")
     link = link.strip()
     if link and not link.startswith("https://"):
         raise HTTPException(400, "Tautan hasil harus diawali https://")
@@ -166,6 +179,7 @@ async def deliver(booking_id: str, note: str = Form(""), link: str = Form(""), f
     d = {"delivery_id": new_id("dlv"), "booking_id": booking_id, "note": note[:1000], "link": link, "files": saved, "created_at": now()}
     await set_status(b, "delivered", user, "Hasil diserahkan")
     await db.deliveries.insert_one(dict(d))
+    await notify_delivered(b)
     return {"ok": True, "delivery_id": d["delivery_id"]}
 
 

@@ -68,7 +68,7 @@ export function BookingModal({ p, close }) {
         <label>Lokasi sesi<input required value={form.location} onChange={set("location")} placeholder="Contoh: Pantai Losari" data-testid="booking-location-input" /></label>
         <label>Catatan<textarea value={form.notes} onChange={set("notes")} data-testid="booking-notes-input" /></label>
         {service && <p className="booking-total" data-testid="booking-total">Total harga paket <b>{money(service.price)}</b></p>}
-        <p className="muted small">Pembayaran online belum aktif — pesanan ini belum menagih dana (DEMO).</p>
+        <p className="muted small">Pembayaran dilakukan setelah fotografer menerima pesanan, maksimal 24 jam. Jika belum aktif, pesanan berjalan dalam mode DEMO tanpa tagihan.</p>
         <label className="check"><input type="checkbox" checked={form.agree_policy} onChange={(e) => setForm({ ...form, agree_policy: e.target.checked })} data-testid="booking-agree-checkbox" /><span>Saya memahami ruang lingkup paket dan menyetujui <Link to="/kebijakan/pembatalan-refund" target="_blank">kebijakan pembatalan, revisi & sengketa</Link>.</span></label>
         {alts && <Alternatives list={alts} close={close} />}
         <button className="olive-btn full" disabled={sending} data-testid="booking-submit">{sending ? "Mengirim..." : "Kirim permintaan"} <ArrowRight size={16} /></button>
